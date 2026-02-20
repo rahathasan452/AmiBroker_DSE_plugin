@@ -1,0 +1,264 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Polish resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_PLK)
+#ifdef _WIN32
+LANGUAGE LANG_POLISH, SUBLANG_DEFAULT
+#pragma code_page(1250)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)\r\n"
+    "#ifdef _WIN32\r\n"
+    "LANGUAGE 9, 1\r\n"
+    "#pragma code_page(1252)\r\n"
+    "#endif //_WIN32\r\n"
+    "#include ""res\\ODBC.rc2""  // non-Microsoft Visual C++ edited resources\r\n"
+    "#include ""afxres.rc""         // Standard components\r\n"
+    "#endif\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_CONFIG_DIALOG DIALOG DISCARDABLE  0, 0, 392, 330
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Configure"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,335,6,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,335,24,50,14
+    LTEXT           "Database\n(ODBC connection string):",IDC_STATIC,7,21,86,
+                    18
+    LTEXT           "Table name:",IDC_STATIC,7,64,70,9
+    COMBOBOX        IDC_TABLE_NAME_COMBO,93,63,118,75,CBS_DROPDOWN | 
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "To use multiple tables - i.e. one table per symbol, use {SYMBOL} tag in the table name\n",
+                    IDC_STATIC,220,63,99,26
+    GROUPBOX        "Field names (case sensitive)",IDC_STATIC,7,92,311,154
+    LTEXT           "Symbol:",IDC_STATIC,14,106,79,11
+    LTEXT           "Close:",IDC_STATIC,14,191,79,11
+    LTEXT           "Open:",IDC_STATIC,14,140,79,11
+    LTEXT           "Date/Time:",IDC_STATIC,14,123,79,11
+    LTEXT           "High:",IDC_STATIC,14,157,79,11
+    LTEXT           "Low:",IDC_STATIC,14,174,79,11
+    LTEXT           "Volume:",IDC_STATIC,14,209,79,11
+    LTEXT           "Open Int:",IDC_STATIC,14,226,79,11
+    COMBOBOX        IDC_SYMBOL_COMBO,93,105,118,12,CBS_DROPDOWN | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
+    GROUPBOX        "Custom SQL queries (for advanced users only !) - NOT IMPLEMENTED YET",
+                    IDC_STATIC,7,250,378,61
+    LTEXT           "Quotations:",IDC_STATIC,14,277,79,10
+    LTEXT           "Symbol list:",IDC_STATIC,14,294,79,10
+    EDITTEXT        IDC_SQL_QUOTATIONS_EDIT,93,277,285,12,ES_AUTOHSCROLL | 
+                    WS_DISABLED
+    EDITTEXT        IDC_SQL_SYMBOL_LIST_EDIT,93,293,285,12,ES_AUTOHSCROLL | 
+                    WS_DISABLED
+    COMBOBOX        IDC_DATE_COMBO,93,121,118,12,CBS_DROPDOWN | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_OPEN_COMBO,93,138,118,12,CBS_DROPDOWN | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_HIGH_COMBO,93,155,118,12,CBS_DROPDOWN | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_LOW_COMBO,93,172,118,12,CBS_DROPDOWN | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_CLOSE_COMBO,93,189,118,12,CBS_DROPDOWN | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_VOLUME_COMBO,93,206,118,12,CBS_DROPDOWN | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_OPEN_INT_COMBO,93,223,118,12,CBS_DROPDOWN | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Use custom queries (requires you to type actual SQL query in the fields below)",
+                    IDC_SQL_CUSTOM_QUERIES_CHECK,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,14,262,304,8
+    PUSHBUTTON      "Pick ODBC source...",IDC_CONNECT_BUTTON,7,5,82,14
+    EDITTEXT        IDC_DSN_EDIT,93,5,225,34,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    WS_VSCROLL
+    PUSHBUTTON      "Retrieve all symbols",IDC_RETRIEVE_BUTTON,222,105,88,14
+    CONTROL         "Re-query database every 5 seconds (warning: generates additional load)",
+                    IDC_AUTO_REFRESH_CHECK,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,314,264,10
+    LTEXT           "Server type:",IDC_STATIC,7,46,78,11
+    COMBOBOX        IDC_SERVER_TYPE_COMBO,93,43,225,155,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_CONFIG_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 385
+        VERTGUIDE, 14
+        VERTGUIDE, 93
+        VERTGUIDE, 211
+        VERTGUIDE, 318
+        TOPMARGIN, 6
+        BOTTOMMARGIN, 323
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog Info
+//
+
+IDD_CONFIG_DIALOG DLGINIT
+BEGIN
+    IDC_SERVER_TYPE_COMBO, 0x403, 48, 0
+0x6547, 0x656e, 0x6972, 0x2063, 0x202d, 0x6f6e, 0x7320, 0x6570, 0x6963, 
+0x6c61, 0x6820, 0x6e61, 0x6c64, 0x6e69, 0x2067, 0x666f, 0x7220, 0x7365, 
+0x7265, 0x6576, 0x2064, 0x6f77, 0x6472, 0x0073, 
+    IDC_SERVER_TYPE_COMBO, 0x403, 69, 0
+0x796d, 0x5153, 0x204c, 0x6f28, 0x6570, 0x206e, 0x6f73, 0x7275, 0x6563, 
+0x2029, 0x202d, 0x7375, 0x7365, 0x6020, 0x6120, 0x2073, 0x6469, 0x6e65, 
+0x6974, 0x6966, 0x7265, 0x7120, 0x6f75, 0x6574, 0x6120, 0x646e, 0x4c20, 
+0x4d49, 0x5449, 0x7320, 0x6174, 0x6574, 0x656d, 0x746e, "\000" 
+    IDC_SERVER_TYPE_COMBO, 0x403, 52, 0
+0x694d, 0x7263, 0x736f, 0x666f, 0x2074, 0x5153, 0x204c, 0x6553, 0x7672, 
+0x7265, 0x2d20, 0x7520, 0x6573, 0x2073, 0x205b, 0x205d, 0x7361, 0x6920, 
+0x6564, 0x746e, 0x6669, 0x6569, 0x2072, 0x7571, 0x746f, 0x0065, 
+    IDC_SERVER_TYPE_COMBO, 0x403, 48, 0
+0x694d, 0x7263, 0x736f, 0x666f, 0x2074, 0x6341, 0x6563, 0x7373, 0x2d20, 
+0x7520, 0x6573, 0x2073, 0x205b, 0x205d, 0x7361, 0x6920, 0x6564, 0x746e, 
+0x6669, 0x6569, 0x2072, 0x7571, 0x746f, 0x0065, 
+    0
+END
+
+#endif    // Polish resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,4,0,0
+ PRODUCTVERSION 1,4,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "Comments", "\0"
+            VALUE "CompanyName", "\0"
+            VALUE "FileDescription", "ODBC DLL\0"
+            VALUE "FileVersion", "1, 4, 0, 0\0"
+            VALUE "InternalName", "ODBC\0"
+            VALUE "LegalCopyright", "Copyright (C) 2006\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "ODBC.DLL\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "ODBC Dynamic Link Library\0"
+            VALUE "ProductVersion", "1, 4, 0, 0\0"
+            VALUE "SpecialBuild", "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+#endif    // !_MAC
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_SPLITTER_RESOURCES
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE 9, 1
+#pragma code_page(1252)
+#endif //_WIN32
+#include "res\ODBC.rc2"  // non-Microsoft Visual C++ edited resources
+#include "afxres.rc"         // Standard components
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

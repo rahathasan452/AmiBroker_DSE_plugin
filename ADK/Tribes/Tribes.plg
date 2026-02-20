@@ -1,0 +1,67 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: Tribes - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating command line "rc.exe /l 0x415 /fo"Release/Tribes.res" /d "NDEBUG" /d "_AFXDLL" "E:\Work\Plugins\Tribes\Tribes.rc"" 
+Creating temporary file "C:\Users\Tomek\AppData\Local\Temp\RSP9C08.tmp" with contents
+[
+/nologo /MD /W3 /GX /Zi /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /Fp"Release/Tribes.pch" /Yu"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
+"E:\Work\Plugins\Tribes\Plugin.cpp"
+"E:\Work\Plugins\Tribes\Tribes.cpp"
+"E:\Work\Plugins\Tribes\TribesD.cpp"
+]
+Creating command line "cl.exe @C:\Users\Tomek\AppData\Local\Temp\RSP9C08.tmp" 
+Creating temporary file "C:\Users\Tomek\AppData\Local\Temp\RSP9C09.tmp" with contents
+[
+/nologo /MD /W3 /GX /Zi /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /Fp"Release/Tribes.pch" /Yc"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
+"E:\Work\Plugins\Tribes\StdAfx.cpp"
+]
+Creating command line "cl.exe @C:\Users\Tomek\AppData\Local\Temp\RSP9C09.tmp" 
+Creating temporary file "C:\Users\Tomek\AppData\Local\Temp\RSP9C0A.tmp" with contents
+[
+/nologo /base:"0x6A600000" /subsystem:windows /dll /incremental:no /pdb:"Release/Tribes.pdb" /debug /machine:I386 /def:".\Tribes.def" /out:"Release/Tribes.dll" /implib:"Release/Tribes.lib" /opt:ref /opt:nowin98 
+.\Release\Plugin.obj
+.\Release\StdAfx.obj
+.\Release\Tribes.obj
+.\Release\TribesD.obj
+.\Release\Tribes.res
+]
+Creating command line "link.exe @C:\Users\Tomek\AppData\Local\Temp\RSP9C0A.tmp"
+<h3>Output Window</h3>
+Compiling resources...
+Compiling...
+StdAfx.cpp
+Compiling...
+Plugin.cpp
+Tribes.cpp
+TribesD.cpp
+E:\Work\Plugins\Tribes\TribesD.cpp(590) : warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
+E:\Work\Plugins\Tribes\TribesD.cpp(1715) : warning C4244: '=' : conversion from 'int' to 'float', possible loss of data
+E:\Work\Plugins\Tribes\TribesD.cpp(2518) : warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
+E:\Work\Plugins\Tribes\TribesD.cpp(2550) : warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
+E:\Work\Plugins\Tribes\TribesD.cpp(2565) : warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
+Generating Code...
+Linking...
+   Creating library Release/Tribes.lib and object Release/Tribes.exp
+Creating temporary file "C:\Users\Tomek\AppData\Local\Temp\RSP9EC9.bat" with contents
+[
+@echo off
+copy .\Release\Tribes.DLL E:\Work\Broker\Plugins
+copy .\Release\Tribes.DLL F:\AmiBroker\Plugins
+]
+Creating command line "C:\Users\Tomek\AppData\Local\Temp\RSP9EC9.bat"
+
+        1 file(s) copied.
+        1 file(s) copied.
+
+
+
+<h3>Results</h3>
+Tribes.dll - 0 error(s), 5 warning(s)
+</pre>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: ASCII - Win32 Debug--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "D:\DOCUME~1\TOMEK\USTAWI~1\Temp\RSP54A1.tmp" with contents
+[
+/nologo /MDd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /Fp"Debug/ASCII.pch" /Yu"stdafx.h" /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
+"E:\Work\ADK\ASCII\Plugin.cpp"
+]
+Creating command line "cl.exe @D:\DOCUME~1\TOMEK\USTAWI~1\Temp\RSP54A1.tmp" 
+Creating temporary file "D:\DOCUME~1\TOMEK\USTAWI~1\Temp\RSP54A2.tmp" with contents
+[
+/nologo /subsystem:windows /dll /incremental:yes /pdb:"Debug/ASCII.pdb" /debug /machine:I386 /def:".\ASCII.def" /out:"Debug/ASCII.dll" /implib:"Debug/ASCII.lib" /pdbtype:sept 
+.\Debug\ASCII.obj
+.\Debug\Plugin.obj
+.\Debug\StdAfx.obj
+.\Debug\ASCII.res
+]
+Creating command line "link.exe @D:\DOCUME~1\TOMEK\USTAWI~1\Temp\RSP54A2.tmp"
+<h3>Output Window</h3>
+Compiling...
+Plugin.cpp
+Linking...
+
+
+
+<h3>Results</h3>
+ASCII.dll - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

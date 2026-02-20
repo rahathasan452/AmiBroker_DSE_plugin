@@ -1,0 +1,41 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: Sample - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "D:\DOCUME~1\TOMEK\USTAWI~1\Temp\RSP5573.tmp" with contents
+[
+/nologo /MD /W3 /GX /O1 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SAMPLE_EXPORTS" /D "_WINDLL" /D "_AFXDLL" /Fp"Release/Sample.pch" /Yu"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /opt:ref /c 
+"E:\Work\ADK\Sample\Functions.cpp"
+"E:\Work\ADK\Sample\Plugin.cpp"
+"E:\Work\ADK\Sample\Sample.cpp"
+]
+Creating command line "cl.exe @D:\DOCUME~1\TOMEK\USTAWI~1\Temp\RSP5573.tmp" 
+Creating temporary file "D:\DOCUME~1\TOMEK\USTAWI~1\Temp\RSP5574.tmp" with contents
+[
+/nologo /MD /W3 /GX /O1 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SAMPLE_EXPORTS" /D "_WINDLL" /D "_AFXDLL" /Fp"Release/Sample.pch" /Yc"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /opt:ref /c 
+"E:\Work\ADK\Sample\StdAfx.cpp"
+]
+Creating command line "cl.exe @D:\DOCUME~1\TOMEK\USTAWI~1\Temp\RSP5574.tmp" 
+Creating command line "link.exe /nologo /dll /incremental:no /pdb:"Release/Sample.pdb" /machine:I386 /out:"Release/Sample.dll" /implib:"Release/Sample.lib" /opt:ref /OPT:NOWIN98  .\Release\Functions.obj .\Release\Plugin.obj .\Release\Sample.obj .\Release\StdAfx.obj "
+<h3>Output Window</h3>
+Compiling...
+StdAfx.cpp
+Compiling...
+Functions.cpp
+Plugin.cpp
+Sample.cpp
+Generating Code...
+Linking...
+   Creating library Release/Sample.lib and object Release/Sample.exp
+
+
+
+<h3>Results</h3>
+Sample.dll - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

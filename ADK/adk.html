@@ -1,0 +1,1374 @@
+<!-- saved from url=(0022)http://internet.e-mail -->
+<html>
+<head>
+<title>Plugin Interface</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+
+<link href="guide.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+<table border="0" cellpadding="4" cellspacing="0" width="100%"
+bgcolor="#C00000">
+  <tr> 
+    <td class="caption">AmiBroker Development Kit</td>
+  </tr>
+</table>
+<p><strong>ADK Revision 2.10a. 4 August, 2010</strong></p>
+<blockquote>
+  <p> * added VS2005 x64 configuration for 64-bit AFL 'Sample' plugin<br>
+    * added 
+    #pragma
+  pack statement to plugin.h to force AmiVar packing on x64 systems</p>
+</blockquote>
+<p><strong>ADK Revision 2.10. 10 April, 2010</strong></p>
+<blockquote>
+  <p>* struct PluginNotification has new field <br>
+    StockInfo * pCurrentSINew<br>
+    and 
+           old field pCurrentSI type has
+  changed to StockInfoFormat4 *</p>
+</blockquote>
+<p>  <strong>ADK Revision 2.00. 6 August, 2009</strong></p>
+<blockquote>
+  <p>added support for <br>
+    * 64-bit date time format <br>
+      * float volume/open int<br>
+    * 2 user fields (Aux) in Quotation structure<br>
+    * 100 new user fields (fundamentals) in StockInfo<br>
+    * proper alignment for 64-bit platforms (8 byte boundary) </p>
+</blockquote>
+<p>  <strong>ADK Revision 1.10.
+    20 November, 2002</strong>  </p>
+<blockquote>
+  <p> Initial release</p>
+</blockquote>
+<p><strong>ADK Source Code license:</strong></p>
+<p>Copyright (C)2001-2009 Tomasz Janeczko, AmiBroker.com. </p>
+<p>Users and possessors of this source code are hereby
+  granted a nonexclusive, royalty-free copyright license to use this code in
+  individual
+  and commercial
+    software.<br>
+  <br>
+   AMIBROKER.COM MAKES NO REPRESENTATION ABOUT THE SUITABILITY OF THIS SOURCE
+  CODE FOR ANY PURPOSE. 
+   IT IS PROVIDED &quot;AS IS&quot; WITHOUT EXPRESS OR IMPLIED WARRANTY OF
+  ANY KIND. 
+   AMIBROKER.COM DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOURCE CODE, 
+   INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+  PURPOSE. 
+   IN NO EVENT SHALL AMIBROKER.COM BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL,
+  OR 
+   CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF
+  USE, DATA OR PROFITS, 
+   WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, 
+   ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOURCE
+  CODE.<br>
+  <br>
+  Any use of this source code must include the above notice,  in the user documentation
+and internal comments to the code.</p>
+<h1><b>1 BASICS</b></h1>
+<p><strong>1.1 INTRODUCTION</strong></p>
+<p>AmiBroker plug-in DLLs are regular Win32 dynamic link libraries. Currently 
+  two types of plugins are supported by AmiBroker plugin interface:</p>
+<ul>
+  <li>AFL plugins</li>
+  <li>Data plugins</li>
+  <li>Optimizer plugins</li>
+</ul>
+<p>The AFL plugins can expose unlimited number of functions to the AFL engine. 
+  The functions provided by the plugin are integrated tightly with AFL engine 
+  so there is no difference in performance or functionality between built-in functions 
+  and the ones provided by the plug-in. </p>
+<p>Data plugins allow to link any external data source. The interface allows to 
+  use fast, local data sources like file-based databases (Metastock files, ASCII 
+  files, FastTrack, Quotes Plus) as well as internet-based feeds (eSignal, myTrack, 
+  QuoteTracker). Both end-of-day and intraday modes are supported. Data plugins 
+  also support various notifications so plugin can notify AmiBroker that new data 
+  just arrived and AmiBroker can notify the plugin about settings change and/or 
+  user action.</p>
+<p>The plug-ins can be created in any language that meets the following requirements:</p>
+<ul>
+  <li>ability to build regular API-like 32bit or 64 bit Windows DLL (non ActiveX/COM)</li>
+  <li>support for user defined datatypes, structures and unions</li>
+  <li>support for pointer data type, pointers to functions, calling functions 
+    by pointer</li>
+  <li>support for _cdecl calling convention</li>
+</ul>
+<p>Visual C++ 6.0 was used to create all source code examples in the AmiBroker 
+  Development Kit. However you can use other development platform and/or language. 
+  To demonstrate this AFL plugin examples include also project (.dev) files for 
+  Bloodshed DevC++ package (<a href="http://www.bloodshed.net">http://www.bloodshed.net</a>). 
+  DevC++ is a FREE development package that can be used to build plugins for AmiBroker. 
+  It produces slightly larger binaries than VisualC++ but other than that it is 
+  fully compatible. To compile AFL samples just install DevC++ package and then 
+  double click on supplied .dev file, then choose Execute-&gt;Compile from DevC++ 
+  IDE. </p>
+<p>Note to Delphi users: Delphi does not support returning 8 byte structures by 
+  register so this is an obstacle in developing plugins in Delphi. This could 
+  be solved by little stub assembly code. Please contact me if you are interested 
+  <a href="emailto:adk@amibroker.com">adk@amibroker.com</a></p>
+<p><strong>1.2 INTERFACE ARCHITECTURE</strong></p>
+<p>Plugin interface is designed to be as simple as possible. AFL plugins need 
+  to export just 5 functions to be fully functional. The simplest data plugin 
+  needs only 4 functions. The full definition of interface is included in Plugin.h 
+  header file and below you will find all necessary information to get going with 
+  the development.</p>
+<p>1.2.1 Background</p>
+<p>To provide maximum flexibility AmiBrokers plug-in interface must provide the 
+  methods for two-way communications between AmiBroker and plugin. AmiBroker as 
+  the process that loaded the DLL can call the functions exported by the DLL but 
+  also the DLL has to have a way to call back AmiBroker functions. For this purpose 
+  AmiBroker provides a &quot;site interface&quot; which is a structure containing 
+  function pointers that can be used to call back internal AmiBroker code. Data 
+  plugins have also ability to send messages to AmiBroker main window notifying 
+  about the updates.</p>
+<p>Each plugin DLL <strong>must </strong>export at least one function called <strong>GetPluginInfo()</strong>. 
+  DLLs without this function are ignored by AmiBroker. GetPlugin info function 
+  provides basic information about the plugin needed by AmiBroker to access all 
+  remaining functions.</p>
+<p>When AmiBroker starts (or when a &quot;Load&quot; button is pressed in the 
+  Plugins window) the following things happen:</p>
+<ul>
+  <li>&quot;Plugins&quot; folder is scanned for the files with .DLL extension</li>
+  <li>each DLL file is examined if it exports <strong>GetPluginInfo() </strong>function. 
+    If there is no such function, this DLL is not a valid AmiBroker plugin. If 
+    <strong>GetPluginInfo() </strong>function is found, it is called to examine 
+    the name and properties of the plug-in. After successful check the DLL is 
+    added to the AmiBroker's internal plugin table. At this stage the type of 
+    the plugin is determined. From then on AFL plugins are treated differently 
+    than data plugins (different functions are called)</li>
+</ul>
+<p>After this step DLL is loaded but waits for the second initialization phase. 
+</p>
+<p>For AFL plugins this second initialization phase happens when AFL engine starts 
+  for a very first time initializing its function table. Then AmiBroker performs 
+  the following operations:</p>
+<ul>
+  <li>AmiBroker calls <strong>SetSiteInterface()</strong> function exported by 
+    the plug in. The site interface is used later in DLL for calling back various 
+    AmiBroker functions (including allocating/freeing memory, reading/writing 
+    AFL variables, calling back AFL functions)</li>
+  <li>AmiBroker calls <strong>Init()</strong> function from the plug in DLL that 
+    should be used for initializing working variables/allocating extra memory 
+    if necessary</li>
+  <li>AmiBroker calls <strong>GetFunctionTable()</strong> from the plug in DLL. 
+    In this step the AFL functions provided by the DLL are added to the internal 
+    AmiBroker dispatch tables allowing futher calls of these functions.</li>
+</ul>
+<p>Note that this is done only once after loading DLLs in the newer versions of 
+  AmiBroker (4.10 and up).</p>
+<p>For Data plugins the second initialization phase happens when given data source 
+  is selected for the very first time in current AmiBroker session. Then AmiBroker 
+  just calls <strong>Init()</strong> function from the plugin that should be used 
+  for initializing working variables/allocating extra memory if necessary. No 
+  other function is called for data plugins at this time.</p>
+<p>After such initialization process the plugin is ready to be used. Next actions 
+  depend on type of the plugin.</p>
+<p>For AFL plugins if any external function call is included in the formula being 
+  parsed by AFL engine, AmiBroker finds appropriate pointer to the function in 
+  its dispatch table and calls either internal code or the code found in one of 
+  the plug-in DLLs. </p>
+<p>For Data plugins AmiBroker may call different functions descibed in Data plugin 
+  section of this document.</p>
+<p>The final stage is performed when AmiBroker exits: </p>
+<ul>
+  <li>for each plug-in DLL Release() function is called which should release all 
+    the resources allocated via Init() call in the second phase.</li>
+</ul>
+<h1>2 AFL PLUGINS</h1>
+<p><b>2.1 FEATURES</b></p>
+<p>AFL plug-in DLLs have the following features:</p>
+<ul>
+  <li>ability to extend built-in function set with a new functions that run at 
+    the compiled code speed (the same as built-in functions), functions can have 
+    unlimited number of arguments</li>
+  <li>ability to overwrite built-in functions</li>
+  <li>ability to call back any built-in AFL function</li>
+  <li>ability to call back the functions defined in other plugins</li>
+  <li>ability to read, write and create the AFL variables</li>
+  <li>easy access to stock arrays (open, high, low, close, volume and open interest)</li>
+  <li>automatic syntax highlighting of all functions exposed by the plugin</li>
+  <li>dynamic loading/unloading the plugins at run time without the need to restart 
+    AmiBroker</li>
+  <li>unlimited number of plugins can be loaded</li>
+</ul>
+<p><b>2.2 INTERFACE DEFINITION</b></p>
+<p>2.2.1 Data types</p>
+<p>One of the most important structures is AmiVar structure. It is used for holding 
+  different types of values. This single structure can hold floating point number, 
+  the array of floating point numbers, a string or IDispatch interface pointer. 
+  Each AFL function receives its arguments as an array of AmiVar values. The AmiVar 
+  structure looks like this:</p>
+<pre>	typedef struct AmiVar
+	{
+   		int type;
+   		union 
+   		{
+   			float val;
+   			float *array;
+   			char *string;
+   			void *disp;
+   		};
+	} AmiVar;
+</pre>
+<p>The first member of the structure -<b> type</b> - holds the information about 
+  data type which can be one of the following:</p>
+<pre>	// the list of AmiVar types
+   	enum { VAR_NONE, VAR_FLOAT, VAR_ARRAY, VAR_STRING, VAR_DISPATCH };
+   </pre>
+<p>VAR_NONE represents the AmiVar that does not have any value. If <b>type</b> 
+  is VAR_FLOAT it means that <b>val</b> member is valid and hold the floating 
+  point number. If <b>type </b>equals VAR_ARRAY it means that <b>array</b> member 
+  is valid and points to the array of floating point values (the size of the array 
+  is the same for all arrays during single function call and can be obtained from 
+  site interface - which will be described later). If <b>type</b> equals to VAR_STRING 
+  it means that <b>string </b>member is valid and points to null-terminated C-style 
+  character string. The VAR_DISPATCH type is provided for calling COM objects 
+  and will not be covered here.</p>
+<p>Proper usage of AmiVar structure looks like this:</p>
+<pre>	AmiVar myvar;
+	myvar.type = VAR_FLOAT; // set the type
+	myvar.val = 10.5f; // assign floating point number</pre>
+<p>Please note that assigning arrays and strings usually require allocating memory. 
+  These allocations must be performed using special allocator functions provided 
+  by the site interface in order to enable AmiBroker to track these allocations 
+  and free the memory when it is no longer needed.<br>
+</p>
+<p>The next important structure is the SiteInterface:</p>
+<pre>struct SiteInterface <br>{<br>				int			nStructSize;<br>				int			(*GetArraySize) (void);	   <br>				float *		(*GetStockArray)( int nType );<br>				AmiVar		(*GetVariable) ( const char *pszName );<br>				void		(*SetVariable) ( const char *pszName, AmiVar newValue );<br>				AmiVar		(*CallFunction) ( const char *szName, int nNumArgs, AmiVar *ArgsTable );<br>				AmiVar		(*AllocArrayResult) (void);<br>				void *		(*Alloc) (unsigned int nSize);<br>				void		(*Free) (void *pMemory);<br>};<br></pre>
+<p>The site interface is provided to the DLL to enable calling back AmiBroker's 
+  internal routines from the plug in side. The site interface provides a set of 
+  function pointers that</p>
+<ul>
+  <li> give you an access to the stock arrays (GetArraySize, GetStockArray)</li>
+  <li>allow reading and writing AFL variables (GetVariable, SetVariable)</li>
+  <li>allow calling back AFL built-in functions (CallFunction)</li>
+  <li>manage memory allocation so it is tracked correctly by AFL engine (AllocArrayResult, 
+    Alloc, Free)</li>
+</ul>
+<p>The pointer to the site interface is set during SetSiteInterface() function 
+  call during second stage of the initialization process (described above). It 
+  happens before call to Init() so you can use all these pointers even in the 
+  Init() function.</p>
+<p>A detailed description on how to use the functions provided by the site interface 
+  is given later on in this document.</p>
+<p>Also important is a function descriptor structure - FunDesc:</p>
+<pre>// FunDesc structure<br>// holds the pointer to actual user-defined function<br>// that can be called by AmiBroker.<br>// It holds also the number of array, string, float and default arguments<br>// for the function and the default values<br>//<br>typedef struct FunDesc<br>{<br>    AmiVar (*Function)( int NumArgs, AmiVar *ArgsTable );<br>    UBYTE   ArrayQty;       // number of Array arguments required   <br>    UBYTE   StringQty;      // number of String arguments required<br>    SBYTE   FloatQty;       // number of float args <br>    UBYTE   DefaultQty;     // number of default float args<br>    float   *DefaultValues; // the pointer to defaults table <br>} FunDesc;<br></pre>
+<p>This structure is used to create a function table that is retrieved by GetFunctionTable. 
+  Each entry of this table contains a function name (visible in AFL) and the function 
+  descriptor structure shown above. The function descriptor contains a function 
+  pointer (<b>Function</b> member) which is used to call actual function when 
+  it is referenced from AFL formula. It works in the following way:</p>
+<ul>
+  <li>AFL engine during parsing detects a function call<br>
+  </li>
+  <li>the name of the function is searched in the symbols table</li>
+  <li>if it is found and the symbol represents existing function (either built-in 
+    or external defined in plugin) the FunDesc structure linked to the symbol 
+    is used first for checking if arguments are correct and then to call the appropriate 
+    function via the pointer stored in FunDesc structure</li>
+</ul>
+<p>In addition to the function pointer, the numbers of arguments of different 
+  types are also stored in FunDesc structure for checking argument count and types 
+  at run time. Note that AFL allows unlimited number of arguments but the order 
+  is fixed: first come the array arguments, then string arguments, then numeric 
+  arguments with no defaults and at the end - numeric arguments with default values. 
+  The number of arguments of each kind is defined in <b>ArrayQty</b>, <b>StringQty</b>, 
+  <b>FloatQty</b>, <b>DefaultQty</b> members respectively. The pointer to the 
+  array of default values is stored in <b>DefaultValues</b> member (this can be 
+  NULL if <b>DefaultQty</b> is zero</p>
+<p>2.2.2 Interface functions</p>
+<p>A valid AmiBroker AFL plug-in DLL <b>must</b> export the following functions:<br>
+</p>
+<pre>PLUGINAPI int GetPluginInfo( struct PluginInfo *pInfo );</pre>
+<p>PLUGINAPI int Init(void);<br>
+  PLUGINAPI int Release(void);</p>
+<p>PLUGINAPI int GetFunctionTable( FunctionTag **ppFunctionTable );<br>
+  PLUGINAPI int SetSiteInterface( struct SiteInterface *pInterface );<br>
+</p>
+<p>The GetPluginInfo() function is used for obtaining the information about the 
+  plugin (the name, vendor name, type, min allowed AmiBroker version) - you should 
+  provide accurate information in your DLL for easy identification of your plugin 
+  in the &quot;Plugins&quot; window in AmiBroker.</p>
+<p>Init() and Release() functions are provided to allow extra memory allocation/other 
+  resource initialization in the DLL.</p>
+<p>SetSiteInterface() function is called by AmiBroker to set the pointer to the 
+  SiteInterface structure in your DLL. Using this pointer you can call back various 
+  internal AmiBroker functions. </p>
+<p>GetFunctionTable() function is called by AmiBroker to retrieve the table of 
+  function names/descriptors describing the AFL functions exposed by your DLL.</p>
+<p><b>2.3 CREATING YOUR OWN AFL PLUGIN DLL</b></p>
+<p>Creating your own plug-in DLL is quite simple. If you are using Visual C++ 
+  6 you should do the following:</p>
+<ol>
+  <li>Choose File-&gt;New from the menu.</li>
+  <li>From the list of available projects choose &quot;Win32 Dynamic-Link Library&quot; 
+    and type the project name, for example &quot;MyPlugin&quot;, then click &quot;OK&quot;</li>
+  <li>In the page &quot;Win32 Dynamic-Link Library - Step 1 of 1&quot; choose 
+    &quot;A simple DLL project&quot; - this will create a project file and three 
+    source code files - MyPlugin.cpp, StdAfx.h, StdAfx.cpp</li>
+  <li>Now copy &quot;Plugin.cpp&quot;, &quot;Plugin.h&quot; and &quot;Functions.cpp&quot; 
+    files from the Sample plugin DLL source code folder to your project folder</li>
+  <li>Choose Project-&gt;Add to project-&gt;Files... menu. From the file dialog 
+    please choose &quot;Plugin.cpp&quot;, &quot;Plugin.h&quot; and &quot;Functions.cpp&quot; 
+    files and click OK. Now these files are added to the project and you can build 
+    it.</li>
+</ol>
+<p>After these steps you have functional copy of a Sample project with your own 
+  name (MyPlugin). From now you can modify project files.</p>
+<p>The only file you really need to modify is &quot;Functions.cpp&quot; file that 
+  actually implements the functions that your plug in will expose to AFL. You 
+  should leave &quot;Plugin.cpp&quot; and &quot;Plugin.h&quot; files untouched 
+  (with one exception). The exception is that you should modify your plugin name, 
+  vendor and version information defined in lines 23-25 of Plugin.cpp:</p>
+<pre>#define PLUGIN_NAME &quot;MyPlugin - enter here real name of the plugin&quot;
+#define VENDOR_NAME &quot;Your name&quot;
+#define PLUGIN_VERSION 010000
+</pre>
+<p>The information defined here is displayed by the AmiBroker in the Plugins window 
+  so it is important to give the user correct information. <u>Please do not forget 
+  to do that</u>.</p>
+<p><b>2.4 IMPLEMENTING YOUR OWN AFL FUNCTIONS</b><br>
+  <br>
+  Now the only work which is left to do is to implement your functions in &quot;Functions.cpp&quot; 
+  file. It is quite good idea to use already written code supplied with a Sample 
+  DLL as a starting point for your modifications.</p>
+<p>2.4.1 Defining function table</p>
+<p>Function exposed by your plug-in must be listed in the functions table that 
+  is retrieved during plug-in intialization using GetFunctionTable call. The function 
+  table looks like this:</p>
+<pre>// Each entry of the table must contain:<br>// &quot;Function name&quot;, { FunctionPtr, &lt;no. of array args&gt;, &lt;no. of string args&gt;, &lt;no. of float args&gt;, &lt;no. of default args&gt;, &lt;pointer to default values table float *&gt;<br>FunctionTag gFunctionTable[] = {
+   &quot;ExampleMACD&quot;, { VExampleMACD, 0, 0, 0, 0, NULL }, 
+   &quot;ExampleMA&quot;,  { VExampleMA, 1, 0, 1, 0, NULL }, 
+   &quot;ExampleEMA&quot;, { VExampleMA, 1, 0, 1, 0, NULL } 
+   };
+ 
+</pre>
+<p>Each entry in this table contains a string that defines the name of the function 
+  as seen by AFL engine and the FunDesc structure that defines pointer to the 
+  function itself and the arguments required by the function:</p>
+<p>&quot;NameOfYourFunction&quot;, { ptrToYourFunction, num_of_array_args, num_of_string_args, 
+  num_of_float_args, num_of_default_args, ptr_to_default_values }, </p>
+<p>AFL engine uses this information during parsing of your AFL formula to check 
+  if the function with given name exists, to check, parse and cast arguments to 
+  appropriate types and finally to call the function.</p>
+<p>If you want to create a function that accepts 1 array and 1 float argument 
+  with no default value the function table entry will look like this:</p>
+<pre>FunctionTag gFunctionTable[] = { 
+&quot;MyFunction&quot;, { MyFunction, 1, 0, 1, 0, NULL },<br>...<br></pre>
+<p>On the other hand if you want to have a default value of 15 for float argument 
+  you would need to write:</p>
+<pre>float myfunction_defaults[] = { 15.0f };</pre>
+<pre>FunctionTag gFunctionTable[] = { 
+   &quot;MyFunction&quot;, { MyFunction, 1, 0, 0, 1, myfunction_defaults },
+   ...</pre>
+<p>2.4.2 Defining functions</p>
+<p>Every function exposed by your plugin must have the following prototype:</p>
+<pre>AmiVar MyFunction( int NumArgs, AmiVar *ArgsTable )
+</pre>
+<p> It means that it gets the pointer to the arguments table (*ArgsTable), the 
+  number of elements in this array (NumArgs) and returns the AmiVar value.</p>
+<p>In case of functions that don't need any argument NumArgs is zero and ArgsTable 
+  has no allocated elements.</p>
+<p>In our example MyFunction will multiply elements of the array (first argument) 
+  by the numeric value given in second argument.</p>
+<p>First we will write the beginning of our function:</p>
+<pre>AmiVar MyFunction( int NumArgs, AmiVar *ArgsTable )
+{
+  	int i;
+   	AmiVar result;</pre>
+<pre>   	result = gSite.AllocArrayResult();<br>	int nSize = gSite.GetArraySize();</pre>
+<p>As you can see after standard prototype we define the counter variable (i) 
+  and the variable that will hold the result of our function (of AmiVar type). 
+  Since our function returns an array we need to allocate the memory for its elements 
+  (for float return values it is of course not needed, but it *is* needed if you 
+  want to return strings). Allocation of the array is easy by calling AllocArrayResult 
+  from site interface. You may also use simply Alloc() function from site interface, 
+  but this function requires byte size of memory to be allocated so it is more 
+  useful to allocate strings ( for example: gSite.Alloc( strlen( string ) + 1 
+  ) ). At the end of this block we retrieve the size of the arrays used by AFL 
+  engine using GetArraySize function of site interface.</p>
+<p>Please note that we could write also:</p>
+<pre>	int nSize = gSite.GetArraySize;<br>	result.type = VAR_ARRAY;<br>	result.array = gSite.Alloc( sizeof( float ) * nSize );</pre>
+<p>but it is longer than using AllocArrayResult().</p>
+<p>Now it is the time for main loop in which we will calculate the values of the 
+  resulting array<br>
+</p>
+<pre> for( i = 0; i &lt; nSize; i++ )
+ {
+    result.array[ i ] = ArgsTable[ 0 ].array[ i ] * ArgsTable[ 1 ].val;
+ }
+   </pre>
+<p>In this loop we simply multiply each element of the array stored in the first 
+  argument by the numeric value stored in the second argument. In function implementation 
+  we don't need to check argument types - once we defined them in the function 
+  table - AFL engine takes care about type checking and implict conversions, so 
+  we can be sure that <b>ArgsTable[ 0 ]</b> holds the array (therefore <b>array</b> 
+  member of the union is valid) and <b>ArgsTable[ 1 ] </b>holds floating point 
+  value (therefore <b>val</b> member of the union is valid).</p>
+<p>Now the only thing left is to return the result from the function:<br>
+</p>
+<pre>
+	return result;
+}
+
+</pre>
+<p>2.4.3 Calling internal AmiBroker functions</p>
+<p>You can call internal AmiBroker function using CallFunction() method of site 
+  interface. To do so you should prepare argument table first. Argument table 
+  should define all parameters needed by the function you are calling (even the 
+  default ones).</p>
+<pre>	AmiVar args[ 2 ];</pre>
+<pre>	args[ 0 ].type = VAR_FLOAT;
+	args[ 0 ].val = 12;</pre>
+<pre>	args[ 1 ].type = VAR_FLOAT;
+	args[ 1 ].val = 26;</pre>
+<pre>	gSite.CallFunction(&quot;macd&quot;, 2, args );</pre>
+<p>2.4.4 Reading and writing AFL variables</p>
+<p>You can read (get) and write (set) the contents of any AFL variable using GetVariable/SetVariable 
+  methods of site interface.</p>
+<p>To read variable just call:</p>
+<pre>	AmiVar value = gSite.GetVariable( &quot;buyprice&quot; );
+	// value.array holds buy price (array of floats)</pre>
+<p>To store numeric value into variable use:</p>
+<pre>	AmiVar myvar;
+	myvar.type = VAR_FLOAT;
+
+	myvar.val = 7;
+
+	gSite.SetVariable(&quot;myownvariable&quot;, myvar );
+</pre>
+<p>The following example illustrates how to set string variable (we get current 
+  time and format it to string then call SetVariable):</p>
+<pre>	time_t ltime;
+	time( &amp;ltime ); // we get current time<br>
+   AmiVar myvar;
+	myvar.type = VAR_STRING;
+	myvar.string = gSite.Alloc( 100 ); // allocate memory for string 
+
+	sprintf( myvar.string, &quot;The time is %s&quot;, ctime( &amp;ltime ) ); // print to allocated buffer
+
+	gSite.SetVariable(&quot;currenttime&quot;, myvar );
+</pre>
+<p><br>
+  Third example shows how to set array variable:</p>
+<pre>	AmiVar myvar = gSite.AllocArrayResult();
+
+	int nSize = gSite.GetArraySize();
+	for( int i = 0; i &lt; nSize; i++ )
+	{
+		myvar.array[ i ] = sin( 0.1 * i );
+	}
+
+
+	gSite.SetVariable(&quot;sinetable&quot;, myvar );
+
+</pre>
+<p>Please note that ability to set AFL variables from the plugin level allows 
+  you to return ANY number of results from your function. Simply call SetVariable 
+  as many times you wish inside your function and you will be able to get the 
+  values of all those variables from AFL side.</p>
+<p></p>
+<h1><b>3 DATA PLUGINS</b></h1>
+<p><b>3.1 FEATURES</b></p>
+<p>Data plug-in DLLs have the following features:</p>
+<ul>
+  <li>support for end-of-day, hourly, 15-, 5-, 1-minute, 15-, 5-second and tick 
+    base intervals</li>
+  <li>auto-refresh of charts/commentaries/interpretation</li>
+  <li>streaming quotes display in real-time quote window</li>
+  <li>data-on-demand</li>
+  <li>build-up intraday histories from streaming data</li>
+  <li>support for non-quotation data (fundamentals, etc)</li>
+  <li>status display, customisable configuration dialogs, custom context menus</li>
+  <li>support for synchronous and asynchronous (event-driven) operation model</li>
+  <li>dynamic loading/unloading the plugins at run time without the need to restart 
+    AmiBroker</li>
+  <li>unlimited number of plugins can be loaded</li>
+</ul>
+<p><b>3.2 INTERFACE DEFINITION</b></p>
+<p>3.2.1 Data types</p>
+<p><i>ATTENTION: The date/time format has changed from 32bit
+    to 64 bit in this release of ADK. Also the layout of Packed Date has changed.
+    Also changed is the laout of Quotation and StockInfo structures. Please read
+    the
+    information
+    below
+  carefully.</i></p>
+<p>In addition to already descibed AmiVar structure, data plugin may use the following 
+  data types:</p>
+<pre>struct PackedDate {<br>						// lower 32 bits<br>						unsigned int IsFuturePad:1;	// bit marking &quot;future data&quot;<br>						unsigned int Reserved:5;	// reserved set to zero<br>						unsigned int MicroSec:10;	// microseconds	0..999<br>						unsigned int MilliSec:10;	// milliseconds	0..999<br>						unsigned int Second: 6;		// 0..59</pre>
+<pre>						// higher 32 bits
+   					unsigned int Minute : 6; // 0..59 63 is reserved as EOD marker
+   					unsigned int Hour : 5; // 0..23 31 is reserved as EOD marker
+   					unsigned int Day : 5; // 1..31
+   					unsigned int Month : 4; // 1..12
+   					unsigned int Year : 12;	// 0..4095
+   
+   };
+ </pre>
+<pre>
+
+
+union AmiDate
+{
+						unsigned __int64	Date;
+						struct PackDate 	PackDate;
+};</pre>
+<p>  AmiDate is a structure that AmiBroker uses to store date and time of quotation.
+     To conserve memory, its date/time fields are bit-packed so they span only
+    64 
+  bits (the same as long integer). Supported date range is Jan 1st, year 0 (zero)
+    upto and including 31 Dec, 4095. Time is stored in one microsecond resolution
+    which is sufficient 
+  for everything including tick charts. The time stamp MUST be unique in new
+    format. In tick mode where data source may not provide sub-second resolution,
+    it is plugin responsibility to make unique timestamps for subsequent ticks
+    by using MicroSec and MilliSec fields. AmiBroker's own plugins count consecutive
+    ticks occuring within given second and store this number in MicroSec field.
+     End-of-day records
+     are marked with 63 in Minute field and 31 in hour field.
+     Years are stored without offset so 0 in
+     Year field represents 0 and 2009 represents year 2009.<br>
+</p>
+<pre>// 40-bytes 8-byte aligned<br>struct Quotation {<br>						union AmiDate DateTime;	// 8 byte<br>                       float   Price;<br>                       float   Open;<br>                       float   High;<br>                       float   Low;<br>						float   Volume;<br>						float	OpenInterest;<br>						float	AuxData1;<br>						float	AuxData2;<br>                 };</pre>
+<p></p>
+<p><br>
+  Quotation structure holds single bar data. DateTime field holds bar date and
+     time and is an AmiDate structure equivalent to unsigned 64 bit int (change
+    from previous release of ADK) Price 
+  field is actualy Close price. The Open, High, Low fields are self-explanatory,
+     these are single precision floating point numbers. Please note that Volume
+    and 
+  OpenInterest fields are currently floating point numbers (change since previous
+    release of ADK). There are two new fields: AuxData1, and AuxData2 for storing
+    auxilliary data such as Bid, Ask, or Traded Volume or user-defined numbers.
+    The meaning of those two fields can be dynamic and depends on data source.</p>
+<p>Flags and PercentReduc fields present in previous versions are removed.</p>
+<pre>
+
+#define MAX_SYMBOL_LEN 48<br>struct StockInfo {		<br>                        char    ShortName[MAX_SYMBOL_LEN];<br>						char	AliasName[MAX_SYMBOL_LEN];<br>						char	WebID[MAX_SYMBOL_LEN];<br>                        char    FullName[128];<br>                        char    Address[128];<br>						char	Country[64];<br>						char	Currency[4];		/* ISO 3 letter currency code */<br>						int		DataSource;			/* the ID of the data plug-in, 0 - accept workspace settings */<br>                        int     DataLocalMode;		/* local mode of operation - 0 - accept workspace settings, 1 - store locally, 2 - don't store locally */<br>						int		MarketID;<br>						int		GroupID;<br>						int		IndustryID;<br>						int		GICS;<br>                        int     Flags;          /* continuous etc.*/     <br>                        int     MoreFlags;          /*  */<br>						float	MarginDeposit;		/* new futures fields - active if SI_MOREFLAGS_FUTURES is set */<br>						float	PointValue;<br>						float	RoundLotSize;<br>						float	TickSize;		/* new futures fields - active if SI_MOREFLAGS_FUTURES is set */<br>						int		Decimals;		  /* number of decimal places to display */<br>						short	LastSplitFactor[ 2 ];	 // /* [ 0 ] - new, [ 1 ] - old */<br>						DATE_TIME_INT LastSplitDate;	 // at 16-byte boundary<br>                        DATE_TIME_INT DividendPayDate;<br>                        DATE_TIME_INT ExDividendDate;         /* div date */<br>						float	SharesFloat;//                        int     Code;<br>						float	SharesOut; //int     StockQty;<br>						float   DividendPerShare;	//<br>						float   BookValuePerShare;<br>						float   PEGRatio;			// PE Growth ratio<br>						float   ProfitMargin;	<br>						float	OperatingMargin;    <br>						float	OneYearTargetPrice;<br>						float	ReturnOnAssets;<br>						float	ReturnOnEquity;<br>						float	QtrlyRevenueGrowth;	 /* year over year */<br>						float	GrossProfitPerShare;<br>						float	SalesPerShare;	   // ttn Sales Revenue<br>						float	EBITDAPerShare;<br>						float	QtrlyEarningsGrowth;<br>						float	InsiderHoldPercent;<br>						float	InstitutionHoldPercent;<br>						float	SharesShort;<br>						float	SharesShortPrevMonth;<br>						float	ForwardEPS;	// from Forward P/E<br>						float	EPS;	// ttm EPS<br>						float	EPSEstCurrentYear;<br>						float	EPSEstNextYear;<br>						float	EPSEstNextQuarter;<br>						float   ForwardDividendPerShare;            <br>						float	Beta;	<br>						float	OperatingCashFlow;<br>						float	LeveredFreeCashFlow;<br>						float	ReservedInternal[ 28 ];<br>						float	UserData[ 100 ];<br>};<br>
+</pre>
+<p>StockInfo structure has been expanded significantly. Existing fields are now
+  wider and there are now fundamental fields exposed via Information window as
+  well as 100 new user-definable fields. StockInfo structure holds basic symbol
+  information like full name (FullName
+  field), ticker
+  symbol
+  (ShortName
+  field)
+  and a number
+  of
+  others.
+  This
+  structure
+  
+  is returned by AddStock method of InfoSite structure and allows you to set-up
+   initial values for symbol that was added using AddStock call. See Quotes Plus
+  
+  plugin source code for example usage.<br>
+</p>
+<pre>
+struct InfoSite
+			{
+				int			nStructSize;
+				int			(*GetStockQty)( void );
+				struct StockInfo * (*AddStock)( const char *pszTicker );
+				int			(*SetCategoryName)( int nCategory, int nItem, const char *pszName );
+				const char *(*GetCategoryName)( int nCategory, int nItem );
+			    int			(*SetIndustrySector) ( int nIndustry, int nSector );
+				int			(*GetIndustrySector) ( int nIndustry );
+			};
+</pre>
+<p>InfoSite structure is a similar concept to SiteInterface found in AFL plugins. 
+  It provides function pointers that allow to call-back AmiBroker internal functions 
+  and perform various operations on AmiBroker stock database. See Quotes Plus 
+  plugin source code for example usage.<br>
+</p>
+<pre>struct RecentInfo<br>{<br>	int		nStructSize;<br>	char	Name[ 64 ];<br>	char	Exchange[8];<br>	int		nStatus;<br>	int		nBitmap;	// describes which fields are valid<br>	float	fOpen;<br>	float	fHigh;<br>	float	fLow;<br>	float	fLast;<br>	int		iTradeVol;<br>	int		iTotalVol;<br>	float	fOpenInt;<br>	float	fChange;<br>	float	fPrev;<br>	float	fBid;<br>	int		iBidSize;<br>	float	fAsk;<br>	int		iAskSize;<br>	float	fEPS;<br>	float	fDividend;<br>	float	fDivYield;<br>	int		nShares; // shares outstanding<br>	float	f52WeekHigh;<br>	int		n52WeekHighDate;<br>	float	f52WeekLow;<br>	int		n52WeekLowDate;<br>	int		nDateChange; // format YYYYMMDD<br>	int		nTimeChange; // format HHMMSS<br>	int		nDateUpdate; // format YYYYMMDD<br>	int		nTimeUpdate; // format HHMMSS<br>	float	fTradeVol;	// NEW 5.27 field<br>	float	fTotalVol;	// NEW 5.27 field <br>};<br>
+</pre>
+<p>RecentInfo structure is used by real-time plugins to store information about
+   most recent streaming update (last bid/ask/trade and a number of other data).
+  
+  Name is a full name of symbol. There is no ticker symbol in this structure
+  because  it is specified by argument passed separately. Please note that if
+  given data 
+  source does not provide all these data then not all those fields have to be
+   valid. To mark which fields are valid you should store combination of RI_***
+  
+  bit flags defined in Plugin.h into nBitmap field. For example storing RI_LAST
+   | RI_OPEN into nBitmap field will mean that fLast and fOpen fields contain
+  valid 
+  values. nDateChange and nTimeChange fields provide the information about date/time
+   of price fields. For example you may start AmiBroker on Sunday and these fields
+  
+  will show Friday's date/time because last price change was on Friday. nDateUpdate
+   and nTimeUpdate fields store the date/time of last update of any field. In
+  most 
+  cases this is current minute/second. So in previous example it would be the
+   Sunday date/time. It is very important to update nDateUpdate and nTimeUpdate
+  
+  fields each time you update any value in this structure otherwise real-time
+   quote window will not work properly. Note about new fTradeVol and fTotalVol
+  fields - these are added in AmiBroker version 5.27. If you want to support
+  both old and new AmiBroker versions your plugin must fill both floating and
+  integer counterparts: fTradeVol and iTradeVol as well as fTotalVol and iTotalVal
+  fields.</p>
+<p>RecentInfo structure is used in two cases: (1) as a return value of <strong>GetRecentInfo()</strong> 
+  function which is called by AmiBroker's real-time quote window on each display 
+  refresh, and (2) passed in LPARAM in WM_USER_STREAMING_UPDATE message sent by 
+  plugin to AmiBroker. See QuoteTracker plugin source code for example usage.</p>
+
+<pre>struct PluginStatus
+{
+	int			nStructSize;
+	int			nStatusCode;
+	COLORREF	clrStatusColor;
+	char		szLongMessage[ 256 ];
+	char		szShortMessage[ 32 ];
+};
+
+</pre>
+<p> Plugin status structure is returned by GetStatus function and provides both 
+  numeric and text status information. Text information is provided in long and 
+  short version. Short version is displayed in the plugin status area of AmiBroker 
+  status bar, long version is displayed in the tooltip. The highest nibble (4-bit 
+  part) of nStatus code represents type of status: 0 - OK, 1 - WARNING, 2 - MINOR 
+  ERROR, 3 - SEVERE ERROR that translate to color of status area: 0 - green, 1 
+  - yellow, 2 - red, 3 - violet. See QuoteTracker plugin source for sample usage.</p>
+<pre>
+
+struct _Workspace {<br>	int		DataSource;	 /* 0 - use preferences, 1 - local, ID of plugin */<br>	int		DataLocalMode;	/* 0 - use preferences, 1 - store locally, 2 - don't */<br>	int		NumBars;<br>	int		TimeBase;<br>	// the place were OLD intraday settings were located<br>	int		ReservedB[ 8 ];<br>	BOOL	AllowMixedEODIntra;<br>	BOOL	RequestDataOnSave;<br>	BOOL	PadNonTradingDays;	 <br>	int		ReservedC;<br>	struct  _IntradaySettings IS;<br>	int		ReservedD;<br>};<br>
+
+
+struct PluginNotification
+{
+	int		nStructSize;
+	int		nReason;
+	LPCTSTR pszDatabasePath;
+	HWND	hMainWnd;
+	struct  StockInfo	*pCurrentSI;
+	struct  _Workspace	*pWorkspace;
+};
+</pre>
+<p><br>
+  PluginNotification structure is filled up by AmiBroker and passed to plugin 
+  as an argument of Notify() call. nReason field describes the &quot;reason&quot; 
+  of notification, that could be the fact that database is loaded, unloaded, settings 
+  are changed or user has clicked with right mouse button over plugin status area 
+  of AmiBroker status bar. This last value (REASON_STATUS_RMBCLICK) is used to 
+  display context menu that can offer some choices to the user like &quot;Connect&quot;, 
+  &quot;Diconnect&quot;, etc. Possible values are defined in Plugin.h file. See 
+  QuoteTracker plugin source for sample usage.</p>
+<p>&nbsp;</p>
+<p>3.2.2 Interface functions</p>
+<p>A valid AmiBroker data plug-in DLL <b>must</b> export the following functions:<br>
+</p>
+<pre>PLUGINAPI int GetPluginInfo( struct PluginInfo *pInfo );</pre>
+<pre>PLUGINAPI int Init(void);
+PLUGINAPI int Release(void);</pre>
+<pre>PLUGINAPI int GetQuotesEx( LPCTSTR pszTicker, int nPeriodicity, int nLastValid, int nSize, struct Quotation *pQuotes, GQEContext *pContext  )<br>PLUGINAPI int GetQuotes( LPCTSTR pszTicker, int nPeriodicity, int nLastValid, int nSize, struct QuotationFormat4 *pQuotes );
+   </pre>
+<p>The <strong>GetPluginInfo()</strong> function is used for obtaining the information 
+  about the plugin (the name, vendor name, type, plugin ID, min allowed AmiBroker 
+  version) - you should provide accurate information in your DLL for easy identification 
+  of your plugin in the &quot;Plugins&quot; window in AmiBroker.</p>
+<p><strong>Init()</strong> and <strong>Release()</strong> functions are provided 
+  to allow extra memory allocation/other resource initialization in the DLL.</p>
+<p><strong>GetQuotesEx()</strong> function is a basic function that all data
+  plugins must export and it is called each time AmiBroker wants to get new quotes.
+  The 
+  main idea behind GetQuotesEx function is very simple: ticker symbol, bar interval
+   and pre-allocated quotation array of nSize elements are passed as arguments
+  
+  to this function. <strong>GetQuotesEx()</strong> should simply fill the array
+   with the quotes of given symbol and given interval. It is that simple. Detailed
+  
+  implementations vary depending on underlying data source (detailed description
+   later in this document).</p>
+<p><b>GetQuotes() </b>function - it is legacy version of GetQuotesEx() function.
+  It is called by AmiBroker versions prior to 5.27. It is called by newer versions
+  of AmiBroker when GetQuotesEx() is NOT exposed by the plugin. This legacy compatibility
+  layer guarantees that old plugins continue to work with new versions of AmiBroker
+  without need to rewrite, although for best performance and to get new features
+  it is advised to update plugins to support new ADK.</p>
+<p>Functions listed below are <strong>optional</strong> for the data plugin and 
+  they may be exported/defined only when additional functionality is needed:</p>
+<pre>PLUGINAPI AmiVar GetExtraData( LPCTSTR pszTicker, LPCTSTR pszName, int nArraySize, int nPeriodicity, void* (*pfAlloc)(unsigned int nSize) );
+PLUGINAPI int Configure( LPCTSTR pszPath, struct InfoSite *pSite );
+PLUGINAPI int SetTimeBase( int nTimeBase );
+PLUGINAPI int Notify( struct PluginNotification *pNotifyData );
+PLUGINAPI int GetPluginStatus( struct PluginStatus *status );
+</pre>
+<p><strong>GetExtraData()</strong> is used for retrieving non-quotation data. 
+  It is called when the GetExtraData() AFL function is used in the formula. pfAlloc 
+  parameter is a pointer to AFL memory allocator that you should use to allocate 
+  memory so it can be later freed by AmiBroker itself. Source code for QuotesPlus 
+  plugin shows sample implementation of <strong>GetExtraData()</strong> that retrieves 
+  fundamental data.</p>
+<p> <strong>Configure()</strong> function is called when user presses &quot;Configure&quot; 
+  button in AmiBroker's File-&gt;Database Settings window. The path to the database 
+  and InfoSite structure are passed as arguments. This allows the plugin to display 
+  its own dialog box that provides plugin-specific settings and allows to store 
+  the settings either in registry (global settings) or in the file stored in database 
+  path (local per-database settings). InfoSite allows the plugin to automatically 
+  setup AmiBroker's database out of information retrieved from external data source. 
+  The source code for QuotesPlus plugin shows real-life example (getting symbols 
+  and setting up entire sector/industry tree). If <strong>Configure()</strong> 
+  function is not exported by the plugin AmiBroker displays message that &quot;plugin 
+  does not require further configuration&quot; when &quot;Configure&quot; button 
+  is clicked.<br>
+</p>
+<p> <strong>SetTimeBase()</strong> function is called when user is changing base 
+  time interval in File-&gt;Database Settings window. It is not required for plugins 
+  that handle only daily (EOD) interval. It has to be defined for all intraday 
+  plugins. The function takes bar interval in seconds (60 for 1-minute bars, 86400 
+  for daily bars) and should return 1 if given interval is supported by the plugin 
+  and 0 if it is not supported.</p>
+<p> <strong>Notify()</strong> function is called when database is loaded, unloaded, 
+  settings are changed, or right mouse button in the plugin status area is clicked. 
+  It supersedes SetDatabasePath (which is now obsolete) that was called only when 
+  database was loaded. <strong>Notify()</strong> function is optional however 
+  it is implemented in almost all plugins because it is a good place to initialize/deinitialize 
+  plugin state. For example implementation of <strong>Notify() </strong>function 
+  please check QuoteTracker plugin source. </p>
+<p><strong>GetPluginStatus()</strong> function is optional and used mostly by 
+  real-time plugins to provide visual feedback on current plugin status. It provides 
+  a way to display status information in the AmiBroker's status bar. For example 
+  implementation of <strong>GetPluginStatus()</strong> function please check QuoteTracker 
+  plugin source. </p>
+<p>The following two functions are implemented <strong>only</strong> by real-time 
+  plugins: </p>
+<pre>PLUGINAPI struct RecentInfo * GetRecentInfo( LPCTSTR pszTicker ); // RT plugins    only 
+PLUGINAPI int GetSymbolLimit( void ); // RT plugins only</pre>
+<p><strong> GetRecentInfo() </strong> function is exported only by real-time plugins 
+  and provides the information about the most recent trade, bid/ask, days high/low, 
+  etc (updated by streaming data). It is called by AmiBroker's real-time quote 
+  window on each window refresh (occurs several times a second). The function 
+  takes ticker symbol and returns the pointer to RecentInfo structure described 
+  above. </p>
+<p><strong> GetSymbolLimit()</strong> function is exported only by real-time plugins. 
+  It returns the maximum number of streaming symbols that plugin and/or external 
+  data source can handle. The result of this function is used to limit the number 
+  of symbols that are displayed in real-time quote window.<br>
+</p>
+<p><b>3.3 CREATING YOUR OWN DATA PLUGIN DLL</b></p>
+<p>Creating your own plug-in DLL is quite simple. If you are using Visual C++ 
+  6 you should do the following:</p>
+<ol>
+  <li>Choose File-&gt;New from the menu.</li>
+  <li>From the list of available projects choose &quot;Win32 Dynamic-Link Library&quot; 
+    and type the project name, for example &quot;MyPlugin&quot;, then click &quot;OK&quot;</li>
+  <li>In the page &quot;Win32 Dynamic-Link Library - Step 1 of 1&quot; choose 
+    &quot;A simple DLL project&quot; - this will create a project file and three 
+    source code files - MyPlugin.cpp, StdAfx.h, StdAfx.cpp</li>
+  <li>Now copy &quot;Plugin.cpp&quot;, &quot;Plugin.h&quot; files from the Data_Template 
+    plugin DLL source code folder to your project folder</li>
+  <li>Choose Project-&gt;Add to project-&gt;Files... menu. From the file dialog 
+    please choose &quot;Plugin.cpp&quot;, &quot;Plugin.h&quot; files and click 
+    OK. Now these files are added to the project and you can build it.</li>
+</ol>
+<p>After these steps you have functional copy of a Sample project with your own 
+  name (MyPlugin). From now you can modify project files.</p>
+<p>The only file you really need to modify is &quot;Plugin.cpp&quot; file that 
+  actually implements the functions that your plug in will expose to AFL. </p>
+<p>You have to modify your plugin name, vendor and version information and plugin 
+  ID code defined in lines 23-26 of Plugin.cpp:</p>
+<pre>#define PLUGIN_NAME &quot;MyPlugin - enter here real name of the plugin&quot;
+#define VENDOR_NAME &quot;Your name&quot;
+#define PLUGIN_VERSION 010000
+#define PLUGIN_ID PIDCODE( 'T', 'E', 'S', 'T')<br>
+</pre>
+<p>The information defined here is displayed by the AmiBroker in the Plugins window 
+  so it is important to give the user correct information. <u>Please do not forget 
+  to do that</u>.</p>
+<p>It is <strong>EXTREMELY IMPORTANT</strong> to use PLUGIN_ID to uniquely identifies 
+  your data source. AmiBroker uses the plugin ID to distinguish between data sources. 
+  For testing purposes you may use PIDCODE( 'T', 'E', 'S', 'T'), but for release 
+  to the public you should contack us at <a href="mailto:adk@amibroker.com">adk@amibroker.com</a> 
+  to receive unique plugin identifier for your data plugin. Already reserved plugin 
+  IDs are: QTRK, MSTK, eSIG, myTK, TC2K, FTRK, CSI, QCOM, DTNI.</p>
+<p>Right after than you should add (if it does not already exist) the following 
+  line:</p>
+<pre>// IMPORTANT: Define plugin type !!!
+#define THIS_PLUGIN_TYPE PLUGIN_TYPE_DATA</pre>
+<p>This defines that the plugin you are writing is data plugin.</p>
+<p><b>3.4 IMPLEMENTING DATA PLUGIN</b><br>
+  <br>
+  A very basic data plugin requires just modification of <strong>GetQuotesEx()</strong> 
+  function supplied with the template. Before we will dig into details a little
+   background is needed.</p>
+<p>Each time AmiBroker needs quotes for particular symbol it calls <strong>GetQuotesEx()</strong> 
+  function. Please note that AmiBroker caches response received from <strong>GetQuotesEx()</strong> 
+  and will not ask for quotes again for the symbol until: (a) user chooses &quot;Refresh&quot; 
+  from View menu, (b) plugin notifies AmiBroker that new data arrived using WM_USER_STREAMING_UPDATE
+   message, (c) old data were removed from the cache. AmiBroker cache maintains
+  
+  the list of most recently accessed symbols and may remove the data of the least
+   recently accessed symbols. The size of AmiBroker's cache is controlled by &quot;in-memory
+    cache&quot; setting in Tools-&gt;Preferences-&gt;Data. </p>
+<p>External data sources could be divided into two categories (a) local databases 
+  (b) remote databases. Local databases have all data stored on computer hard 
+  disk or CD-ROM and available for immediate retrieval. Remote databases (also 
+  known as on-demand data sources) do not store all data locally, instead they 
+  retrieve the data on-demand from remote computer (usually via Internet). These 
+  two kinds of data sources have to be handled differently. </p>
+<p>In the first case (local sources) quotes can be retrieved in synchronous way:
+   we ask for data and block the calling application until data are collected.
+  
+  This is acceptable because data are available locally and can be delivered
+  within  few milliseconds. This is the case for all file-based sources like:
+  Metastock, 
+  Quotes Plus, TC2000, FastTrack. During <strong>GetQuotesEx()</strong> call
+  you should simply read requested number of bars from the data source and fill
+  provided 
+  Quotation array.</p>
+<p>In the second case (remote sources) quotes have to be retrieved in asynchronous
+   way. When <strong>GetQuotesEx()</strong> function is called for the first
+   time, request for new data has to be send to the data source. As data from
+   remote
+   
+  source arrive usually after a few seconds (or more) we can <strong>not</strong> 
+  block calling application (AmiBroker). Instead control should be returned to
+   AmiBroker. Depending on architecture of your data source you should either
+  setup 
+  a window or another thread that will wait for the message sent back by the
+  data  source when data is ready. When such message is received the plugin should
+  send 
+  WM_USER_STREAMING_UPDATE message that will nofity AmiBroker that it should
+  ask  for quotes. In the response to this message AmiBroker will call <strong>GetQuotesEx()</strong> 
+  function again. This time you should fill Quotation array with the data you
+   received from remote source. To avoid repeated requests for historical intraday
+  
+  data, once it is retrieved, real-time plugins begin to collect streaming time/sales
+   data and build-up intraday bars. Each successive <strong>GetQuotesEx()</strong> 
+  call receives bars that were build-up inside plugin from streaming upates.
+  This  mode of operation is used by eSignal and myTrack real-time plugins. </p>
+<p>Now we will show the simplest form of <strong>GetQuotesEx()</strong> function
+   that will read the quotes from the local ASCII file. We will be reading 1-minute
+  
+  intraday ASCII files.</p>
+<p> We assume that data files are stored in 'ASCII' subfolder of AmiBroker directory 
+  and they have name of &lt;SYMBOL&gt;.AQI and the format of Date (YYMMDD), Time 
+  (HHMM), Open, High, Low, Close, Volume (actually these are AQI files produced 
+  by AmiQuote) and quotes inside file are sorted in ascending rder (the oldest 
+  quote is on the top)</p>
+<pre>PLUGINAPI int GetQuotesEx( LPCTSTR pszTicker, int nPeriodicity, int nLastValid, int nSize, struct Quotation *pQuotes, GQEContext *pContext  )
+{
+
+	// we assume that intraday data files are stored in ASCII subfolder
+	// of AmiBroker directory and they have name of <symbol>.AQI
+	// and the format of Date(YYMMDD),Time(HHMM),Open,High,Low,Close,Volume
+	// and quotes are sorted in ascending order - oldest quote is on the top
+
+	char filename[ 256 ];
+	FILE *fh;
+	int  iLines = 0;
+	
+	// format path to the file (we are using relative path)
+	sprintf( filename, "ASCII\\%s.AQI", pszTicker );
+
+	// open file for reading
+	fh = fopen( filename, "r" );
+
+	// if file is successfully opened read it and fill quotation array
+	if( fh )
+	{
+		char line[ 256 ];
+
+		// read the line of text until the end of text
+		// but not more than array size provided by AmiBroker
+		while( fgets( line, sizeof( line ), fh ) && iLines < nSize )
+		{
+			// get array entry
+			struct Quotation *qt = &pQuotes[ iLines ];
+			
+			// parse line contents: divide tokens separated by comma (strtok) and interpret values
+			
+			// date	and time first
+			int datenum = atoi( strtok( line, "," ) );	// YYMMDD
+			int timenum = atoi( strtok( NULL, "," ) );	// HHMM
+
+			// unpack datenum and timenum and store date/time 
+			qt->DateTime.Date = 0; // make sure that date structure is intialized with zero
+			qt->DateTime.PackDate.Minute = timenum % 100;
+			qt->DateTime.PackDate.Hour = timenum / 100;
+			qt->DateTime.PackDate.Year = 2000 + datenum / 10000;
+			qt->DateTime.PackDate.Month = ( datenum / 100 ) % 100;
+			qt->DateTime.PackDate.Day = datenum % 100;
+
+			// now OHLC price fields
+			qt->Open = (float) atof( strtok( NULL, "," ) );
+			qt->High = (float) atof( strtok( NULL, "," ) );
+			qt->Low  = (float) atof( strtok( NULL, "," ) );
+			qt->Price = (float) atof( strtok( NULL, "," ) ); // close price
+
+			// ... and Volume
+			qt->Volume = (float) atof( strtok( NULL, ",\n" ) );
+
+			iLines++;
+		}
+
+		// close the file once we are done
+		fclose( fh );
+
+	}
+
+	// return number of lines read which is equal to
+	// number of quotes
+	return iLines;	 
+}
+</pre>
+<p>For simplicity the example does not do any serious error checking.</p>
+<p>A few comments about arguments of <strong>GetQuotesEx()</strong> function.
+  First  argument pszTicker is a null-terminated ticker symbol, nPeriodicity
+  is bar interval 
+  (in seconds). Third parameter nLastValid requires some more description. When
+   AmiBroker calls <strong>GetQuotesEx() </strong> function it may already have
+   some  data for given symbol (stored for example in its own files when local
+   data storage 
+  is ON). However, before <strong>GetQuotesEx()</strong> is called AmiBroker
+  always allocates quotation array of size defined in File-&gt;Database Settings:
+  default number of bars. This size is passed to the plugin as nSize argument.
+  If AmiBroker
+   
+  has already some data for given symbol it fills initial elements of quotation
+    array passed to <strong>GetQuotesEx()</strong> function. The index of last
+    filled  element of quotation array is passed as nLastValid argument. This
+    allows to 
+  update just a few new bars without the need to fill entire array inside the
+     plugin. This technique is used for example in QuotesPlus plugin that does
+    not 
+  update entire array if it finds that last valid quote is the same as last quote
+     available from Quotes Plus database. The last argument is pQuotes array
+    which 
+  is array of Quotation structures. The array is allocated by AmiBroker itself
+     and it has the size of nSize elements.</p>
+<p><b>3.5 LEGACY  FORMAT SUPPORT (PRE-5.27 VERSIONS)</b></p>
+<p>The data interface for  pre-5.27 AmiBroker versions had only <b>GetQuotes</b> function
+  exported that used old quotation structure (QuotationFormat4). To ensure backward
+  compatibility with old versions of AmiBroker (pre 5.27), any data plugin MUST
+  export GetQuotes function. The simplest way to do this is to copy-paste the
+  following code that does entire format translation back and forth and uses
+  new GetQuotesEx format described earlier. Old format structures (QuotationFormat4,
+  StockInfoFormat4) as well as 
+  ConvertFormat4Quote() and ConvertFormat5Quote() helper functions are defined
+  in the Plugin_Legacy.h.</p>
+<pre>// GetQuotes wrapper for LEGACY format support
+// convert back and forth between old and new format
+//
+// WARNING: it is highly inefficient and should be avoided
+// So this is left just for maintaning compatibility,
+// not for performance<br>// 
+PLUGINAPI int GetQuotes( LPCTSTR pszTicker, int nPeriodicity, int nLastValid,   int nSize, struct QuotationFormat4 *pQuotes )
+{
+ AFX_MANAGE_STATE( AfxGetStaticModuleState() );
+</pre>
+<pre> Quotation *pQuote5 = (struct Quotation *) malloc( nSize * sizeof( Quotation   ) );</pre>
+<pre> QuotationFormat4 *src = pQuotes; 
+ Quotation *dst = pQuote5;</pre>
+<pre> int i;</pre>
+<pre> for( i = 0; i &lt;= nLastValid; i++,     src++, dst++ )
+ {
+   ConvertFormat4Quote( src, dst );
+ }</pre>
+<pre> int nQty = GetQuotesEx( pszTicker, nPeriodicity, nLastValid, nSize, pQuote5,   NULL );</pre>
+<pre> dst = pQuote5;
+ src = pQuotes;</pre>
+<pre> for( i = 0; i &lt; nQty; i++, dst++,     src++ )
+ {
+   ConvertFormat5Quote( dst, src );
+ }</pre>
+<pre> free( pQuote5 );</pre>
+<pre> return nQty;
+}
+ 
+</pre>
+<p><b>3.6 CONVERTING/UPGRADING EXISTING DATA PLUGINS (ADK 1.10) TO USE NEW API
+    (2.00)</b></p>
+<p>If you already have existing data plugin written with ADK 1.10 (for pre-5.27
+  versions of AmiBroker), here is the list of things to do/check in order to
+   update your plugin to new ADK and make it AmiBroker 5.27+ compatible. Please
+  note that altough AmiBroker 5.27 has its own compatibility layer for old plugins
+  (will call old-style GetQuotes() if plugin does not export new-style GetQuotesEx()),
+  this layer has certain computational cost. This cost is insignificant for end-of-day
+  plugins but may be serious if you use real-time data source with large number
+  of bars (500K+). So it is highly recommended, where possible, to support new
+  format using this new version of ADK.</p>
+<p>Here are the steps required / check list for conversion to new ADK:</p>
+<p>1. Use new header (just copy Plugin.h / Plugin_Legacy.h files from ADK Include
+  folder)</p>
+<p>2. Examine sources for all occurences of &quot;Tick&quot; member of AmiDate
+  structure 
+  and replace it with 'Second'. Do not forget about removing multiplication/division
+  by 5
+applied previously to 'Tick' member.</p>
+<p>3. Examine sources for all occurrences of Volume and OpenInt fields of quotation
+  structure. 
+  Replace 'int' for 'float' data type in those places.</p>
+<p>4. Remove any usage of Flags and PercReduc fields in Quotation structure</p>
+<p>5. Change your original GetQuotes function to GetQuotesEx function, do not
+  forget to add new parameter (GQEContext *) at the end of parameter list. This
+  parameter is for future expansion, can be NULL and currently can be ignored.</p>
+<p>6. To support legacy format copy the legacy GetQuotes() wrapper
+listed above. It will convert from old format to new, call new GetQuotesEx and
+  convert back to new format.</p>
+<p>7. If you are using AddStock() function from InfoSite make sure that you call
+  new function 
+  ONLY if structure size (nStructSize) is equal to 32 or more (on 32 bit platforms).</p>
+<pre>PLUGINAPI int Configure( LPCTSTR pszPath, struct InfoSite *pSite )
+{
+   if( pSite-&gt;nStructSize &gt;= sizeof( struct InfoSite ) )
+   {
+    /// YOU CAN CALL pSite-&gt;AddStockNew here !
+    // and you can access new StockInfo data members
+   }
+   else
+   {
+    /// otherwise you can _only_ call pSite-&gt;AddStock here !
+    
+    // NOTE THE DIFFERENCES between returned StockInfo and StockInfoFormat4
+   }
+}</pre>
+<p>If you fail to take these precaution steps your code will generate crash when
+  user
+  presses Configure button</p>
+<p>8. RecentInfo has been extended to support float trade vold and total volume.
+  Old fields are left in place for legacy support, so you plugin should fill
+    BOTH<br>
+  old (integer) and new (float) volume and set the structure size correctly
+so new versions of AmiBroker can know that float fields are available</p>
+<p>9. Now Year member of AmiDate structure holds FULL year (0000 upto 4095)
+  (as compared to previously used offset 1900 year) so you need to find<br>
+  all occurrences where 1900 constant is used in your code and adjust the code
+(usually be removing 1900 constant) so FULL year is used in new format. When
+  removing 1900 constant from &quot;everywhere&quot;, do NOT do that for Plugin_Legacy.h
+  file as it contains conversion functions between old and new format where using
+  1900 constant is required.</p>
+<p>10. Make sure to use 64 bit integers (unsigned __int64) wherever new datetime
+  comparisions are used.</p>
+<p> 11. Examine source codes for mask such as 0x007FFF that was previously used
+  as  &quot;
+  EOD&quot; mask. With current 64-bit date/time this has to be replaced by <br>
+  0x000007FFffffFFC0i64 constant (defined as DAILY_MASK in the header)<br>
+</p>
+<h1><b>4 OPTIMIZER PLUGINS</b></h1>
+<p><b>4.1 Getting Started</b></p>
+<p>Optimizer plugins are very simple to implement. You just need to get skeleton
+  code (MonteCarlo random optimizer sample is good as a starting point) and add
+  your bits to it. </p>
+<p>As every AmiBroker DLL plugin, optimizer plugins require 3 core functions:
+  GetPluginInfo, Init(), Release() that are standard part of AmiBroker plugin
+  interface. They are very staightforward (single-liners in most cases). You
+  can just copy / paste the functions below. The only 2 things that you must
+  change:</p>
+<ul>
+  <li>the name of the plugin (see #define PLUGIN_NAME ...), and</li>
+  <li>the plugin ID code (see PIDCODE inside PluginInfo structure)</li>
+</ul>
+<p>The plugin ID code MUST BE UNIQUE. Otherwise it will conflict with other plugins.
+  For tests I suggest using <CODE><FONT COLOR=#000000>PIDCODE( '<b>t</b>', 'e',
+  '<b>s</b>', '1') </FONT></CODE>changing the last digit if you want to have
+  more than one test plugin. For list of already used IDs please see : <a href="http://www.amibroker.com/plugins.html" target="_blank">http://www.amibroker.com/plugins.html</a> .
+  Before releasing your plugin to the public, you must request unique plugin
+  ID from support at amibroker.com. The plugin ID will be later used to specify
+  optimizer in AFL code via OptimizerSetEngine() function.</p>
+<p><CODE><FONT COLOR=#008000>// These are the only two lines you need to change</FONT><FONT COLOR=#000000> <BR>
+  #define PLUGIN_NAME </FONT><FONT COLOR=#800080>"Monte Carlo Optimizer plug-in"</FONT><FONT COLOR=#000000> <BR>
+  #define VENDOR_NAME </FONT><FONT COLOR=#800080>"Amibroker.com"</FONT><FONT COLOR=#000000> <BR>
+  #define PLUGIN_VERSION </FONT><FONT COLOR=#800080>10001</FONT><FONT COLOR=#000000> <BR>
+  <BR>
+  <BR>
+  #define THIS_PLUGIN_TYPE PLUGIN_TYPE_OPTIMIZER <BR>
+  <BR>
+  </FONT><FONT COLOR=#008000>////////////////////////////////////////</FONT><FONT COLOR=#000000> <BR>
+  </FONT><FONT COLOR=#008000>// Data section</FONT><FONT COLOR=#000000> <BR>
+  </FONT><FONT COLOR=#008000>////////////////////////////////////////</FONT><FONT COLOR=#000000> <BR>
+  static struct PluginInfo oPluginInfo = <BR>
+  { <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sizeof( struct PluginInfo ), <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; THIS_PLUGIN_TYPE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PLUGIN_VERSION, <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PIDCODE( '<b>m</b>', 'o', '<b>c</b>', 'a'), <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PLUGIN_NAME, <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VENDOR_NAME, <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#800080>13012679</FONT><FONT COLOR=#000000>, <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#800080>387000</FONT><FONT COLOR=#000000> <BR>
+  }; <BR>
+  <BR>
+  <BR>
+  </FONT><FONT COLOR=#008000>///////////////////////////////////////////////////////////</FONT><FONT COLOR=#000000> <BR>
+  </FONT><FONT COLOR=#008000>// Basic plug-in interface functions exported by
+  DLL</FONT><FONT COLOR=#000000> <BR>
+    </FONT><FONT COLOR=#008000>///////////////////////////////////////////////////////////</FONT><FONT COLOR=#000000> <BR>
+    <BR>
+  PLUGINAPI </FONT><FONT COLOR=#0000ff>int</FONT><FONT COLOR=#000000> GetPluginInfo(
+  struct PluginInfo *pInfo ) <BR>
+  { <BR>
+&nbsp;&nbsp;&nbsp; *pInfo = oPluginInfo; <BR>
+  <BR>
+&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#800000><B>return</B></FONT><FONT COLOR=#000000> <B>True</B>; <BR>
+  } <BR>
+  <BR>
+  <BR>
+  PLUGINAPI </FONT><FONT COLOR=#0000ff>int</FONT><FONT COLOR=#000000> Init(void) <BR>
+  { <BR>
+&nbsp;&nbsp;&nbsp; <BR>
+&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#800000><B>return</B></FONT><FONT COLOR=#000000> </FONT><FONT COLOR=#800080>1</FONT><FONT COLOR=#000000>; <BR>
+  }&nbsp;&nbsp;&nbsp; <BR>
+  <BR>
+  PLUGINAPI </FONT><FONT COLOR=#0000ff>int</FONT><FONT COLOR=#000000> Release(void) <BR>
+  { <BR>
+  <BR>
+&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#800000><B>return</B></FONT><FONT COLOR=#000000> </FONT><FONT COLOR=#800080>1</FONT><FONT COLOR=#000000>; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#008000>//
+default implementation does nothing</FONT><FONT COLOR=#000000> <BR>
+  } <BR>
+  </FONT></CODE></p>
+<p><b>4.2 Optimizer Interface</b></p>
+<p>The optimizer interface consists of 4 simple functions:</p>
+<ul>
+  <li> int OptimizerInit( struct OptimizeParams *pParams );</li>
+  <li>int OptimizerRun( struct OptimizeParams *pParams, double (*pfEvaluateFunc)(
+    void * ), void *pContext );</li>
+  <li>int OptimizerFinalize( struct OptimizeParams *pParams );</li>
+  <li>int OptimizerSetOption( const char *pszParam, AmiVar newValue );</li>
+</ul>
+<p>And two data structures:</p>
+<p><CODE><FONT COLOR=#000000>struct OptimizeItem <BR>
+  { <BR>
+&nbsp;&nbsp;&nbsp; <font color="#0000FF">char</font>&nbsp;&nbsp;&nbsp;*Name</FONT><FONT COLOR=#000000>; <BR>
+&nbsp;&nbsp;&nbsp; <font color="#0000FF">float</font>&nbsp;&nbsp;&nbsp;Default</FONT><FONT COLOR=#000000>; <BR>
+&nbsp;&nbsp;&nbsp; <font color="#0000FF">float</font>&nbsp;&nbsp;&nbsp;Min; <BR>
+&nbsp;&nbsp;&nbsp; <font color="#0000FF">float</font>&nbsp;&nbsp;&nbsp;Max; <BR>
+&nbsp;&nbsp;&nbsp; <font color="#0000FF">float</font>&nbsp;&nbsp;&nbsp;Step; <BR>
+&nbsp;&nbsp;&nbsp; <font color="#0000FF">double</font>&nbsp;&nbsp;&nbsp;Current; <BR>
+&nbsp;&nbsp;&nbsp; <font color="#0000FF">float</font>&nbsp;&nbsp; Best; <BR>
+  }; <BR>
+  <BR>
+  #define MAX_OPTIMIZE_ITEMS </FONT><FONT COLOR=#800080>100</FONT><FONT COLOR=#000000> <BR>
+  <BR>
+  struct OptimizeParams <BR>
+  { <BR>
+&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#0000ff>int</FONT><FONT COLOR=#000000>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Mode;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#008000>//
+0 - gets defaults, 1 - retrieves settings from formula (setup phase), 2 - optimization
+phase</FONT><FONT COLOR=#000000> <BR>
+&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#0000ff>int</FONT><FONT COLOR=#000000>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WalkForwardMode;&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#008000>//
+0 - none (regular optimization), 1-in-sample, 2 - out of sample</FONT><FONT COLOR=#000000> <BR>
+&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#0000ff>int</FONT><FONT COLOR=#000000>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Engine;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#008000>//
+optimization engine selected - 0 means - built-in exhaustive search</FONT><FONT COLOR=#000000> <BR>
+&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#0000ff>int</FONT><FONT COLOR=#000000>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Qty;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#008000>//
+number of variables to optimize</FONT><FONT COLOR=#000000> <BR>
+&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#0000ff>int</FONT><FONT COLOR=#000000>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LastQty; <BR>
+&nbsp;&nbsp;&nbsp;BOOL&nbsp;&nbsp;&nbsp;CanContinue;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#008000>//
+boolean flag 1 - means optimization can continue, <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;//0
+- means aborted by pressing "Cancel" in progress dialog or other error</FONT><FONT COLOR=#000000> <BR>
+&nbsp;&nbsp;&nbsp;BOOL&nbsp;&nbsp;&nbsp;DuplicateCheck;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#008000>//
+boolean flag 1 - means that AmiBroker will first<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// </FONT></CODE><CODE><FONT COLOR=#008000>check
+if same param set wasn't used already</FONT><FONT COLOR=#000000> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#008000>//
+and if duplicate is found it won't run backtest, instead will return previously
+stored value</FONT><FONT COLOR=#000000> <BR>
+&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#0000ff>int</FONT><FONT COLOR=#000000>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Reserved; <BR>
+&nbsp;&nbsp;&nbsp;<font color="#0000FF">char</font>&nbsp;&nbsp;&nbsp;*InfoText;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#008000>//
+pointer to info text buffer (providing text display in the progress dialog)</FONT><FONT COLOR=#000000> <BR>
+&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#0000ff>int</FONT><FONT COLOR=#000000>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;InfoTextSize;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#008000>//
+the size (in bytes) of info text buffer</FONT><FONT COLOR=#000000> <BR>
+&nbsp;&nbsp;&nbsp;<font color="#0000FF">__int64</font>&nbsp;&nbsp;&nbsp;Step;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#008000>//
+current optimization step (used for progress indicator) - automatically increased
+with each iteration</FONT><FONT COLOR=#000000> <BR>
+&nbsp;&nbsp;&nbsp;<font color="#0000FF">__int64</font>&nbsp;&nbsp;&nbsp;NumSteps;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#008000>//
+total number of optimization steps (used for progress indicator)</FONT><FONT COLOR=#000000> <BR>
+&nbsp;&nbsp;&nbsp;<font color="#0000FF">double</font>&nbsp;&nbsp;TargetCurrent; <BR>
+&nbsp;&nbsp;&nbsp;<font color="#0000FF">double</font>&nbsp;&nbsp;TargetBest; <BR>
+&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#0000ff>int</FONT><FONT COLOR=#000000>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TargetBestStep;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</FONT><FONT COLOR=#008000>//
+optimization step in which best was achieved</FONT><FONT COLOR=#000000> <BR>
+&nbsp;&nbsp;&nbsp;<font color="#0000FF">struct</font>&nbsp;&nbsp;&nbsp;OptimizeItem&nbsp;&nbsp;&nbsp;Items[
+MAX_OPTIMIZE_ITEMS ]; </FONT><FONT COLOR=#008000>// parameters to optimize</FONT><FONT COLOR=#000000> <BR>
+  };</FONT></CODE><br>
+</p>
+<p><b>4.2.1 Data structures</b></p>
+<p>The OptimizeParams structure holds all information needed to perform optimization.
+  The most important part is <b>Items</b> array of OptimizeItem structures. It
+  holds the array of all parameters specified for optimization using AFL's Optimize()
+  function. The number of valid parameters is stored in Qty member of OptimizeParams
+  structure.<br>
+</p>
+<p><b>4.2.2 OptimizerInit function</b><br>
+    <br>
+  PLUGINAPI int OptimizerInit( struct OptimizeParams *pParams )<br>
+</p>
+<p>This function gets called when AmiBroker collected all information about parameters
+  that should be optimized. This information is available in OptimizeParams structure.
+  The optimization engine DLL should use this point to initialize internal data
+  structures. Also the optimizer should set the value of pParams-&gt;NumSteps
+  variable to the expected TOTAL NUMBER OF BACKTESTS that are supposed to be
+  done during optimization.</p>
+<p>This value is used for two purposes:<br>
+  1. progress indicator (total progress is expressed as backtest number divided
+    by NumSteps)<br>
+  2. flow control (by default AmiBroker will continue calling OptimizerRun until
+  number of backtests reaches the NumSteps) - it is possible however to<br>
+  override that (see below)</p>
+<p>Note that sometimes you may not know exact number of steps (backtests) in
+  advance, in that case provide estimate. Later, inside OptimizerRun you will
+  be able to adjust it, as tests go by.<br>
+    <br>
+  Return values:<br>
+  1 - initialization complete and OK<br>
+  0 - init failed</p>
+<p><b>4.2.3 OptimizerSetOption function</b></p>
+<p> PLUGINAPI int OptimizerSetOption( const char *pszParam, AmiVar newValue )<br>
+</p>
+<p>This function is intended to be used to allow setting additional options /
+  parameters of optimizer from the AFL level. <br>
+      <br>
+  It gets called in two situations:<br>
+  1. When SetOptimizerEngine() AFL function is called for particular optimizer
+  - then it calls OptimizerSetOption once with pszParam set to NULL<br>
+  and it means that optimizer should reset parameter values to default values<br>
+  2. When OptimizerSetOption( &quot;paramname&quot;, value ) AFL function is
+  called<br>
+    <br>
+  Return codes:<br>
+  1 - OK (set successful)<br>
+  0 - option does not exist<br>
+  -1 - wrong type, number expected<br>
+  -2 - wrong type, string expected</p>
+<p><b>4.2.4 OptimizerRun function<br>
+      <br>
+  </b>PLUGINAPI int OptimizerRun( struct OptimizeParams *pParams, double (*pfEvaluateFunc)(
+  void * ), void *pContext )<br>
+  <b> <br>
+  </b><br>
+  This function is called multiple times during main optimization loop<br>
+  <br>
+  There are two basic modes of operations<br>
+  1. Simple Mode<br>
+  2. Advanced Mode<br>
+  <br>
+  In simple optimization mode, AmiBroker calls OptimizerRun before running backtest
+  internally. Inside OptimizationRun the plugin should simply set current values
+  of parameters and return 1 as long as backtest using given parameter set should
+  be performed. AmiBroker internally will<br>
+  do the remaining job. By default the OptimizerRun will be called pParams-&gt;NumSteps
+  times.<br>
+  In this mode you don't use pfEvaluateFunc argument. <br>
+  <br>
+  See Monte Carlo (MOCASample) sample optimizer for coding example using simple
+  mode.<br>
+    <br>
+    <br>
+  In advanced optimization mode, you can trigger multiple &quot;objective function&quot; evaluations
+  during single OptimizerRun call.<br>
+  There are many algorithms (mostly &quot;evolutionary&quot; ones) that perform
+  optimization by doing multiple runs, with each run consisting of multiple &quot;objective
+  function&quot;/&quot;fitness&quot; evaluations. To allow interfacing such algorithms
+  with AmiBroker's optimizer infrastructure the advanced mode provides access
+  to pfEvaluateFunc pointer that call evaluation function.<br>
+    <br>
+  In order to properly evaluate objective function you need to call it the following
+  way:<br>
+    <br>
+  pfEvaluateFunc( pContext );<br>
+  <br>
+  Passing the pContext pointer is absolutely necessary as it holds internal state
+  of AmiBroker optimizer. The function will crash if you fail to pass the context.<br>
+     <br>
+  The following things happen inside AmiBroker when you call evaluation function:<br>
+  a) the backtest with current parameter set (stored in pParams) is performed<br>
+  b) step counter gets incremented (pParams-&gt;Step)<br>
+  c) progress window gets updated<br>
+  d) selected optimization target value is calculated and stored in pParams-&gt;TargetCurrent
+  and returned as a result of pfEvaluateFunc<br>
+     <br>
+  Once you call pfEvaluateFunc() from your plugin, AmiBroker will know that you
+  are using advanced mode, and will NOT perform extra backtest after returning
+  from OptimizerRun<br>
+     <br>
+  By default AmiBroker will continue to call OptimizerRun as long as pParams-&gt;Step
+  reaches pParams-&gt;NumSteps. You can overwrite this behaviour by returning
+  value other than 1. See Standard Particle Swarm Optimizer (PSOSample) for coding
+  example using advanced mode.<br>
+    <br>
+  Return values:<br>
+  0 - terminate optimization<br>
+  1 (default value) - optimization should continue until reaching defined number
+  of steps<br>
+  2 - continue optimization loop regardless of step counter</p>
+<p><b>4.2.5 OptimizerFinalize function</b><br>
+    <br>
+  PLUGINAPI int OptimizerFinalize( struct OptimizeParams *pParams ) </p>
+<p> This function gets called when AmiBroker has completed the optimization.
+  The optimization engine should use this point to release internal<br>
+  data structures. <br>
+  <br>
+  Return values:<br>
+  1 - finalization complete and OK<br>
+  0 - finalization failed</p>
+<h1><b>5 SUPPLIED EXAMPLES</b></h1>
+<p>In the ADK archive you will find the following examples of plug in DLLs:</p>
+<p>Sample AFL plugins:</p>
+<ul>
+  <li>Sample - contains Visual C++ 6/DevC++ source code of sample DLL that shows 
+    how to calculate standard and exponential moving average, and how to call 
+    AFL built-in functions from the DLL. Also includes a function that skips undefined 
+    (empty) values that can be found at the beginning of the array. It also shows 
+    how to create variable-period exponential moving average and how to set AFL 
+    variable values inside the plugin code.<br>
+    Good starting point for writing your own plug-ins. Includes Sample.dev project 
+    file for DevC++. </li>
+  <li>Candle - contains Visual C++ 6/DevC++ source code of candlestick function 
+    plug-in DLL. Includes Candle.dev project file for DevC++.</li>
+  <li>JRSample - contains Visual C++ 6/DevC++ source code showing how to write 
+    the plugin that uses Jurik Research generic DLLs (JMA in this example). Includes 
+    JRSample.dev project file for DevC++.<br>
+    <u>For this sample to work you will need Jurik Reseach generic JMA DLL installed
+     properly.</u> Please note that you should copy <b>JRS_32.LIB</b> file included
+      with Jurik's package to the project directory before building the example </li>
+</ul>
+<p>Sample Data plugins:</p>
+<ul>
+  <li>QT - contains complete Visual C++ 6 source code of actual Quote Tracker 
+    plugin DLL. It shows all aspects of programming intraday data plugin</li>
+  <li>QP2 - contains complete Visual C++ 6 source code of actual Quotes Plus plugin 
+    DLL. Excellent example of end-of-day plugin with support for fundamental data 
+    via GetExtraData(). To compile this project you will need to copy the header 
+    file (usrdll32.h) and the lib file (qpdll.lib) from Quotes Plus SDK which 
+    is available on Quotes Plus CD. You can order trial version from <a href="http://www.qp2.com">http://www.qp2.com</a></li>
+  <li>ASCII - contains very simple ASCII plugin (contains GetQuotes function described 
+    in this document)</li>
+  <li> Data_Template - contains template project for data plugin</li>
+</ul>
+<p>Sample optimizer plugins:</p>
+<ul>
+  <li>MOCASample - Monte-carlo style (random) optimizer driver</li>
+  <li>PSOSample - Particle Swarm Optimizer driver</li>
+  <li>Tribes - Tribes parameter-less particle swarm optimizer driver</li>
+</ul>
+<p>Note that
+      pre-build ready to use DLLs are located in Plugins subfolder of this ADK
+    archive.</p>
+<h1>6 DEBUGGING PLUGIN DLLs</h1>
+<p>If you are using Visal C++ as your debugger you can simply, pick &quot;Broker.exe&quot; as &quot;Debug
+  executable&quot; in the project settings and then you just use run it within
+  DEBUGGER. You can setup a breakpoint inside your function or anywhere else.
+  The debugging plugin does not differ at all from debugging any other DLL in
+the VC.</p>
+<p>You may also need to turn off AmiBroker exception trapping by adding the following
+  DWORD key to the registry</p>
+<p>HKEY_CURRENT_USER\Software\TJP\Broker\Settings\TrapExceptions = 0</p>
+<p>(set it to zero)</p>
+<p>Without it AmiBroker traps exceptions and it will display &quot;error recovery&quot; instead
+  of allowing debugger to catch the exception. Use this setting in development
+  environment only. Production environment <strong>MUST NOT</strong> have this registry entry
+  otherwise bugs could not be reported and user-triggered errors/exceptions may
+  crash application instead of being caught and handled.</p>
+<p>&nbsp;</p>
+<p><br>
+</p>
+</body>
+</html>

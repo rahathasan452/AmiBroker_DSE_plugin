@@ -1,0 +1,59 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: Candle - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\Users\Tomek\AppData\Local\Temp\RSP798C.tmp" with contents
+[
+/nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "CANDLE_EXPORTS" /D "_WINDLL" /D "_AFXDLL" /Fp"Release/Candle.pch" /Yu"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
+"E:\Work\Plugins\Candle\Candle.cpp"
+"E:\Work\Plugins\Candle\Functions.cpp"
+"E:\Work\Plugins\Candle\Plugin.cpp"
+]
+Creating command line "cl.exe @C:\Users\Tomek\AppData\Local\Temp\RSP798C.tmp" 
+Creating temporary file "C:\Users\Tomek\AppData\Local\Temp\RSP798D.tmp" with contents
+[
+/nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "CANDLE_EXPORTS" /D "_WINDLL" /D "_AFXDLL" /Fp"Release/Candle.pch" /Yc"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
+"E:\Work\Plugins\Candle\StdAfx.cpp"
+]
+Creating command line "cl.exe @C:\Users\Tomek\AppData\Local\Temp\RSP798D.tmp" 
+Creating temporary file "C:\Users\Tomek\AppData\Local\Temp\RSP798E.tmp" with contents
+[
+/nologo /base:"0x69000000" /dll /incremental:no /pdb:"Release/Candle.pdb" /machine:I386 /out:"Release/Candle.dll" /implib:"Release/Candle.lib" /opt:ref /opt:nowin98 
+.\Release\Candle.obj
+.\Release\Functions.obj
+.\Release\Plugin.obj
+.\Release\StdAfx.obj
+]
+Creating command line "link.exe @C:\Users\Tomek\AppData\Local\Temp\RSP798E.tmp"
+<h3>Output Window</h3>
+Compiling...
+StdAfx.cpp
+Compiling...
+Candle.cpp
+Functions.cpp
+Plugin.cpp
+Generating Code...
+Linking...
+   Creating library Release/Candle.lib and object Release/Candle.exp
+Creating temporary file "C:\Users\Tomek\AppData\Local\Temp\RSP7A59.bat" with contents
+[
+@echo off
+copy .\Release\Candle.DLL E:\Work\Broker\Plugins
+copy .\Release\Candle.DLL F:\AmiBroker\Plugins
+]
+Creating command line "C:\Users\Tomek\AppData\Local\Temp\RSP7A59.bat"
+
+        1 file(s) copied.
+        1 file(s) copied.
+
+
+
+<h3>Results</h3>
+Candle.dll - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

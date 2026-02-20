@@ -1,0 +1,188 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_CONFIG_DIALOG DIALOG DISCARDABLE  0, 0, 276, 225
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Quotes Plus plugin configuration"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "Select categories to retrieve (all items belonging to given category will be added to the database):",
+                    IDC_STATIC,16,13,184,17
+    CONTROL         "Stocks",IDC_STOCK_CHECK,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,16,37,175,11
+    CONTROL         "Indexes",IDC_INDEX_CHECK,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,16,50,175,11
+    CONTROL         "Sector/industry assignments",IDC_SECTOR_CHECK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,62,153,13
+    CONTROL         "Mutual funds",IDC_FUND_CHECK,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,16,76,175,11
+    CONTROL         "Cash futures",IDC_CASH_CHECK,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,16,89,175,11
+    CONTROL         "Commodity futures (continuous)",IDC_COMMODITY_CHECK,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,103,115,11
+    COMBOBOX        IDC_CONT_TYPE_COMBO,138,102,71,129,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Retrieve",IDC_RETRIEVE_BUTTON,109,157,99,14
+    DEFPUSHBUTTON   "Close",IDOK,218,7,50,14
+    GROUPBOX        "Database setup",IDC_STATIC,7,3,208,188
+    LTEXT           "",IDC_STATUS_STATIC,16,175,194,11,SS_SUNKEN
+    GROUPBOX        "Options",IDC_STATIC,7,193,211,25
+    CONTROL         "Unadjusted (raw) data",IDC_UNADJUSTED_CHECK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,203,92,10
+    CONTROL         "Only symbols with issue_status = 0",
+                    IDC_ONLYACTIVELYTRADED_CHECK,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,16,125,192,9
+    CONTROL         "Exclude symbols without quotes",
+                    IDC_EXCLUDE_NO_QUOTES_CHECK,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,16,138,192,9
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_CONFIG_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 268
+        VERTGUIDE, 16
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 218
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 2,0,1,0
+ PRODUCTVERSION 2,0,1,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "Comments", "\0"
+            VALUE "CompanyName", "Tomasz Janeczko, AmiBroker.com\0"
+            VALUE "FileDescription", "Quotes Plus Data Feed DLL \0"
+            VALUE "FileVersion", "2, 0, 1, 0\0"
+            VALUE "InternalName", "QP2\0"
+            VALUE "LegalCopyright", "Copyright © 2001-2002 Tomasz Janeczko, AmiBroker.com\0"
+            VALUE "LegalTrademarks", "AmiBroker is a trademark of amibroker.com company, QP2 and Quotes Plus are tradermarks of Quotes Plus, Inc.\0"
+            VALUE "OriginalFilename", "QP2.dll\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "AmiBroker QP2 data feed DLL\0"
+            VALUE "ProductVersion", "2, 0, 1, 0\0"
+            VALUE "SpecialBuild", "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+#endif    // !_MAC
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog Info
+//
+
+IDD_CONFIG_DIALOG DLGINIT
+BEGIN
+    IDC_CONT_TYPE_COMBO, 0x403, 17, 0
+0x6f56, 0x756c, 0x656d, 0x4320, 0x6f72, 0x7373, 0x766f, 0x7265, "\000" 
+    IDC_CONT_TYPE_COMBO, 0x403, 11, 0
+0x6946, 0x6578, 0x2064, 0x6144, 0x6574, "\000" 
+    IDC_CONT_TYPE_COMBO, 0x403, 17, 0
+0x6f56, 0x756c, 0x656d, 0x5420, 0x7268, 0x7365, 0x6f68, 0x646c, "\000" 
+    0
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

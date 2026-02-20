@@ -1,0 +1,334 @@
+<style type="text/css">
+<!--
+body {
+	font-family: Arial, Helvetica, sans-serif;
+}
+-->
+</style>
+<h1>ODBC/SQL Universal Data/AFL plugins <br>
+(Version 1.4.0)</h1>
+<p>Copyright (C)2006, 2007 AmiBroker.com. </p>
+<p>Last updated: 
+  <!-- #BeginDate format:Am1m -->March 21, 2007  19:33<!-- #EndDate -->
+</p>
+<h1> INTRODUCTION.</h1>
+<p>There are two plugins:<br>
+  ODBC.dll - data plugin<br>
+  ODBCA.dll - AFL plugin</p>
+<p>Data plugin handles retrieving quotation data, while 
+  AFL plugin allows to access other data from AFL formula level.</p>
+<p>In fact these two plugins are almost identical and will be merged
+  in the future into one as soon as AmiBroker will have support for dual-mode
+  plugins.</p>
+<p>Both plugin files should be copied to  &quot;
+  Plugins&quot; subfolder inside AmiBroker directory.</p>
+<p>Once properly loaded they will appear under Tools-&gt;Plugins in AmiBroker
+  as:</p>
+<ul>
+  <li>ODBC/SQL Universal Data Plugin</li>
+  <li>ODBC/SQL Universal AFL Plugin<br>
+  </li>
+</ul>
+<h3>DOWNLOADS</h3>
+<p>ODBC Data and AFL data plugins and their source codes are available from the
+  following locations:</p>
+<ul>
+  <li>ODBC/SQL Universal Data plugin: <a href="http://www.amibroker.com/bin/odbc/ODBC.dll">http://www.amibroker.com/bin/odbc/ODBC.dll</a></li>
+  <li>ODBC/SQL Universal AFL plugin: <a href="http://www.amibroker.com/bin/odbc/ODBCA.dll">http://www.amibroker.com/bin/odbc/ODBCA.dll</a></li>
+  <li>ODBC/SQL Data/AFL plugin C++ source code (for Visual C++ 6.0) <a href="http://www.amibroker.com/bin/odbc/ODBCSrc.zip">http://www.amibroker.com/bin/odbc/ODBCSrc.zip</a></li>
+</ul>
+<h3>DATA PLUGIN</h3>
+<p>Data plugin can connect to any database that has corresponding ODBC driver.
+  In order to allow to access data, the table holding quotations needs to have
+  the following columns:</p>
+<ul>
+  <li>SYMBOL - holding ticker symbol (text - varchar)</li>
+  <li>DATE - quotation date / time (DATETIME type - for Microsoft SQL Server,
+    or TIMESTAMP type for mySQL (open source))</li>
+  <li>OPEN - open (recommended FLOAT type)</li>
+  <li>HIGH - high (recommended FLOAT type)</li>
+  <li>LOW - low (recommended FLOAT type)</li>
+  <li>CLOSE - close (recommended FLOAT type)</li>
+  <li>VOLUME - volume (recommended FLOAT or INT type)</li>
+  <li>OPENINT (optional) - open interest - (recommended FLOAT or INT type)</li>
+</ul>
+<p>Types of fields are not that important as plugin has ability to auto-convert
+  if types differ. Recommended types are just as a guideline for best performance.</p>
+<p>To connect to external database please follow these steps:</p>
+<p>1. Go to File-&gt;New database </p>
+<p>2. Enter new database path and click &quot;Create&quot; button</p>
+<p>3. Select &quot;ODBC/SQL Universal Data plugin&quot; from Data source combo</p>
+<p>4. Click on &quot;Configure&quot; button</p>
+<p>5. Click on &quot;Pick database button&quot; and create new ODBC source or pick existing
+  one then click OK</p>
+<p>6. Select desired table name from the &quot;Table name&quot; combo</p>
+<p>7. Pick correct column names for Open/High/Low/Close/Symbo/Date fields or
+  accept defaults</p>
+<p>8. (Optional) You may press &quot;Retrieve symbols&quot; button to get the list of symbols
+  transferred from the external database to AmiBroker</p>
+<p>9. Click OK</p>
+<p>10. Click OK to close Database Settings dialog</p>
+<p><b>Configuration Dialog</b></p>
+<p>Data plugin configuration dialog is available from File-&gt;Database Settings-&gt;Configure</p>
+<p><img src="gifs/odbc_config.gif" width="594" height="561"></p>
+<p>Controls:</p>
+<p><b>Pick ODBC Data source...</b> - brings up standard Windows ODBC data source
+  selector that allows you to pick existing source or create new one. After picking
+  the data source appropriate connection string is copied automatically to <b>Database
+  (ODBC connection string)</b>. Note that in case of some servers (for example
+  Microsoft SQL Express 2005) it may be required to add manually the following
+  two items to the connection string: SERVER=.\SQLEXPRESS;DRIVER={SQL Server};</p>
+<p>If picked data source is available, then plugin connects to it and fills <b>Table
+  name</b> combo box with the list of available tables.</p>
+<p><b>Database (ODBC connection string)</b> - standard ODBC connection string
+  required to connect to the database. This includes the data source name as
+  well as other optional information, such as a user ID and password. For example, &quot;ODBC;DSN=SQLServer_Source;DATABASE=MyDatabase;UID=SA;PWD=abc123&quot; is
+  a possible connection string. For more information about Microsoft SQL Server
+connection strings see this: <a href="http://msdn.microsoft.com/library/default.asp?url=/library/en-us/odbcsql/od_odbc_d_4x4k.asp">http://msdn.microsoft.com/library/default.asp?url=/library/en-us/odbcsql/od_odbc_d_4x4k.asp</a></p>
+<p><b>Server Type </b> - this allows to fine-tune the plugin to particular database
+  type. There are some important
+  differences between different database systems. For example different systems
+  use different
+  quote
+  mark for
+  enclosing
+  reserved
+  words. mySQL uses ` (backtick) while Microsoft database systems use [ ] instead.
+  Also mySQL has LIMIT statement that is absent with other databases. Microsoft
+  SQL Server has problems handling column names using reserved words like OPEN
+  therefore if you are using MS SQL Server you MUST select it here otherwise
+  you will get errors. <b>If you are using database system that is NOT listed here
+  please select &quot;Generic&quot;.</b></p>
+<p><b>Table name</b> - combo box field that is filled with all tables present
+  in the database currently connected. You should pick the table which holds
+  quotation data (i.e. SYMBOL, DATA, OPEN, HIGH, LOW, CLOSE, VOLUME columns)</p>
+<p><b>Symbol</b> - the name of the field in selected table that holds ticker
+  symbols. By default it is set to SYMBOL but you can pick any other column name
+  that you have in your database</p>
+<p><b>Retrieve All Symbols</b> - pressing this button queries the database with
+  the following SQL :</p>
+<p>SELECT Symbol FROM &lt;selectedtable&gt; GROUP BY Symbol</p>
+<p>- this gives the list of all symbols available in the table and this list
+  is then copied to AmiBroker's internal symbol list (so you don't need to add
+  symbols manually)</p>
+<p><b>Date/Time, Open, High, Low, Close, Volume, Open Int </b>- these fields
+  define column names for subsequent price data fields. You may use them to change
+  the
+  names
+  of the columns if your database does not follow default schema of SYMBOL, DATE,
+  OPEN, HIGH, LOW, CLOSE, VOLUME. Open Int field is optional</p>
+<p><b>Requery database every 5 seconds</b> - if you check this box, the plugin
+  will trigger automatic refreshes of all charts causing re-query of database
+  every 5 seconds. This is useful if your database is fed with real time data
+  and you want changes to be reflected (almost) immediatelly on the charts. Please
+  note that if you are using EOD database you should NOT use this feature as
+  it just adds extra load to your database and to your computer.</p>
+<p><b>Custom SQL queries ( for advanced users only ):</b></p>
+<p>This functionality allows to modify queries used in quote and symbol list
+  retrieval. It can be used if you want to use joins or views or stored procedures
+  to retrieve data.</p>
+<p><b>Use custom queries </b>- if this box is checked the plugin will use custom
+  queries specified in <b>Quotations</b> and <b>Symbol List</b> fields below
+  to query for quotes and symbol list instead of using predefined ones.</p>
+<p><b>Quotations </b>- custom SQL query used to retrieve quotations for particular
+  symbol. The query needs to return the recordset that contains all price fields
+  defined
+  above (SYMBOL, DATA, OPEN, HIGH, LOW, CLOSE and VOLUME) for given ticker. The
+  recordset must be sorted in DESCENDING date order. Default query (for mySQL
+  database) used is:</p>
+<p>SELECT SYMBOL, DATE, OPEN, HIGH, LOW, CLOSE, VOLUME FROM &lt;tablename&gt; WHERE
+  SYMBOL='{SYMBOL}'
+ORDER BY DATE DESC</p>
+<p>To use views instead of tables simply use &lt;viewname&gt; instead of &lt;tablename&gt;</p>
+<p><b>Symbol list</b> - custom SQL query used to retrieve quotations for particular
+  symbol. The query needs to return the recordset that contains one column that
+holds list of unique symbols.  Default query (for mySQL database) used is:</p>
+<p>SELECT SYMBOL FROM &lt;tablename&gt; WHERE 1=1 GROUP BY SYMBOL</p>
+<h3>FUNCTIONS (AFL)</h3>
+<p><b>odbcOpenDatabase( &quot;connectstring&quot; )</b></p>
+<p>- opens database using ODBC driver</p>
+<p>connectstring - specifies an ODBC connect string. This includes the data source
+  name as well as other optional information, such as a user ID and password.
+  For
+  example, &quot;DSN=SQLServer_Source;UID=SA;PWD=abc123&quot; is
+a possible connect string. </p>
+<p>If you do not know what exactly connection string is, provided that you use
+  ODBC Data plugin as your quotation source as well, you may go to File-&gt;Database
+  Settings-&gt;Configure and copy connection string from &quot;Data source&quot;
+  field (you
+  need to press &quot;Pick data source&quot; button first if database was not configured).</p>
+<p>Example:</p>
+<p><CODE><FONT COLOR=#000000></FONT><FONT COLOR=#0000ff>odbcOpenDatabase</FONT><FONT COLOR=#000000>(</FONT><FONT COLOR=#ff00ff>"ODBC;DATABASE=amitest;DSN=mySQL
+AmiTest;OPTION=0;PORT=0;UID=root"</FONT><FONT COLOR=#000000>); </FONT></CODE></p>
+<p><CODE><FONT COLOR=#000000><BR>
+</FONT></CODE><b>odbcSetFieldNames( &quot;symbolfield&quot;, &quot;datefield&quot; )</b></p>
+<p>- allows to set names of symbol and date/time columns.</p>
+<p>By default the plugin uses SYMBOL and DATE as names of those two columns to
+  produce internally statements like this:</p>
+<p>SELECT FIELD, DATE FROM tablename WHERE SYMBOL = 'MSFT' ORDER BY DATE ASC</p>
+<p>This function is provided to allow you to read data from tables that have
+  different column names than defaults.</p>
+<p>Example:</p>
+<p><CODE><FONT COLOR=#0000ff>odbcSetFieldNames</FONT><FONT COLOR=#000000>(</FONT><FONT COLOR=#ff00ff>"ticker",
+      &quot;datetime&quot; </FONT><FONT COLOR=#000000>); </FONT></CODE></p>
+<p>&nbsp;</p>
+<p><b>odbcGetArray( &quot;tablename&quot;, &quot;symbol&quot;, &quot;fieldname&quot; )</b></p>
+<p>- retrieves array  from database table</p>
+<p>&quot;tablename&quot; - is the name of table to retrieve data from</p>
+<p>&quot;symbol&quot; is the ticker symbol to request data for, if you specify empty string
+  then current symbol is used</p>
+<p>&quot;fieldname&quot; is the column name with custom data</p>
+<p>The plugin internally executes the following query</p>
+<p>SELECT fieldname, DATE FROM tablename WHERE SYMBOL = 'symbol' ORDER BY DATE
+  ASC</p>
+<p>and returns data held in fieldname column.</p>
+<p>Example:</p>
+<p><CODE><FONT COLOR=#000000>  </FONT><FONT COLOR=#000000><B>Graph0</B></FONT><FONT COLOR=#000000>=</FONT><FONT COLOR=#0000ff>odbcGetArray</FONT><FONT COLOR=#000000>(</FONT><FONT COLOR=#ff00ff>"mytable"</FONT><FONT COLOR=#000000>, </FONT><FONT COLOR=#ff00ff>""</FONT><FONT COLOR=#000000>, </FONT><FONT COLOR=#ff00ff>"userval1"</FONT><FONT COLOR=#000000>);</FONT></CODE></p>
+<p><b>odbcGetArraySQL( &quot;sql statement&quot; )</b></p>
+<p>- retrieves array from database  using SQL statement</p>
+<p>&quot;sql statement&quot; - is either SELECT statement on table or view or
+  a call to stored procedure.</p>
+<p>The statement needs to return the recordset with TWO columns. First column
+  should be the data itself and second column should be date/time column. The
+  recordset must be sorted by second column (date/time) in ASCENDING order.</p>
+<p><CODE><FONT COLOR=#000000></FONT><FONT COLOR=#000000><B>Graph0</B></FONT><FONT COLOR=#000000>=</FONT><FONT COLOR=#0000ff>odbcGetArraySQL</FONT><FONT COLOR=#000000>(</FONT><FONT COLOR=#ff00ff>"SELECT
+userval1, DATE FROM mytable WHERE SYMBOL='"</FONT><FONT COLOR=#000000>+</FONT><FONT COLOR=#0000ff>Name</FONT><FONT COLOR=#000000>()+</FONT><FONT COLOR=#ff00ff>"'
+ORDER BY DATE ASC"</FONT><FONT COLOR=#000000>);</FONT></CODE></p>
+<p><b>odbcGetValue( &quot;tablename&quot;, &quot;symbol&quot;, &quot;fieldname&quot; )</b></p>
+<p>- retrieves single numerical or text value from database table</p>
+<p>&quot;tablename&quot; - is the name of table to retrieve data from</p>
+<p>&quot;symbol&quot; is the ticker symbol to request data for, if you specify
+  empty string then current symbol is used</p>
+<p>&quot;fieldname&quot; is the column name with custom data</p>
+<p>The plugin internally executes the following query</p>
+<p>SELECT fieldname FROM tablename WHERE SYMBOL = 'symbol' </p>
+<p>and returns first data record held in fieldname column.</p>
+<p>The function is intended to be used on arrays WITHOUT date/time column (static
+  data, no history).</p>
+<p>Example:</p>
+<p><CODE> <FONT COLOR=#000000><B>Graph0</B>=</FONT><FONT COLOR=#0000ff>odbcGetValue</FONT><FONT COLOR=#000000>(</FONT><FONT COLOR=#ff00ff>"mytable"</FONT><FONT COLOR=#000000>, </FONT><FONT COLOR=#ff00ff>""</FONT><FONT COLOR=#000000>, </FONT><FONT COLOR=#ff00ff>"userval1"</FONT><FONT COLOR=#000000>);</FONT></CODE></p>
+<p><b>odbcGetValueSQL( &quot;sql statement&quot; )</b></p>
+<p>&quot;sql statement&quot; - is either SELECT statement on table or view or
+a call to stored procedure.</p>
+<p>The statement needs to return the recordset with ONE column holding the data
+  itself. The function will read first record only. If more than one records
+  is returned - the remaining records are ignored.</p>
+<p>Example:</p>
+<p><CODE> <FONT COLOR=#000000></FONT><FONT COLOR=#000000><B>Graph1</B></FONT><FONT COLOR=#000000>=</FONT><FONT COLOR=#0000ff>odbcGetValueSQL</FONT><FONT COLOR=#000000>(</FONT><FONT COLOR=#ff00ff>"SELECT
+userval1 FROM mytable WHERE SYMBOL='AA'"</FONT><FONT COLOR=#000000>);</FONT></CODE></p>
+<p><b>odbcExecuteSQL( &quot;sql statement&quot; )</b></p>
+<p>- executes SQL statement</p>
+<p>This function returns 1 (True) on success, 0 (False) on failure.</p>
+<p>This function takes string parameter containing valid SQL statment such as
+  INSERT, UPDATE, DELETE, etc, and as such allows write operations on the database.
+  It is <b>not</b> intended to be used with SELECT statements or other statements
+  (stored procedure calls) returning recordsets as it returns only true/false
+  on success/failure.</p>
+<p>Example:</p>
+<p><CODE><FONT COLOR=#000000></FONT><FONT COLOR=#0000ff>odbcExecuteSQL</FONT><FONT COLOR=#000000>(</FONT><FONT COLOR=#ff00ff>"INSERT
+      INTO testtable (fieldone,symbol) VALUES ( 'somevalue','"</FONT><FONT COLOR=#000000>+</FONT><FONT COLOR=#0000ff>Name</FONT><FONT COLOR=#000000>()+</FONT><FONT COLOR=#ff00ff>"'
+)"</FONT><FONT COLOR=#000000>);</FONT></CODE></p>
+<p><br>
+<b>odbcGetLastError( )</b></p>
+<p>- returns last database error message</p>
+<p>This function returns string that contains last error received from ODBC driver
+  (or underlying database system). </p>
+<p>Example:</p>
+<p><CODE><FONT COLOR=#000000></FONT><FONT COLOR=#800000><B>if</B></FONT><FONT COLOR=#000000>( </FONT><FONT COLOR=#000000><B>NOT</B></FONT><FONT COLOR=#000000> </FONT><FONT COLOR=#0000ff>odbcExecuteSQL</FONT><FONT COLOR=#000000>(</FONT><FONT COLOR=#ff00ff>"INSERT
+      INTO testtable (fieldone,symbol) VALUES ( 'somevalue','"</FONT><FONT COLOR=#000000>+</FONT><FONT COLOR=#0000ff>Name</FONT><FONT COLOR=#000000>()+</FONT><FONT COLOR=#ff00ff>"'
+      )"</FONT><FONT COLOR=#000000>) ) <BR>
+  { <BR>
+  &nbsp;&nbsp;</FONT><FONT COLOR=#0000ff>_TRACE</FONT><FONT COLOR=#000000>(</FONT><FONT COLOR=#ff00ff>"INSERT
+  failed with following message : "</FONT><FONT COLOR=#000000> +</FONT><FONT COLOR=#0000ff>odbcGetLastError</FONT><FONT COLOR=#000000>()
+  ); <BR>
+}</FONT></CODE></p>
+<p><b>odbcDisplayErrors( enable )</b></p>
+<p>- allows to turn ON or OFF error message box display</p>
+<p>by default all database engine errors are displayed as message box popups
+  that interrupt execution of the formula and require user intervention. You
+  can swich them off by calling odbcDisplayErrors( False ) at the beginning of
+  your formula, so no error messages will be displayed. You will still be able
+  to retrieve those error messages programmatically using odbcGetLastError message.</p>
+<p>Example:</p>
+<p><CODE><FONT COLOR=#000000></FONT><FONT COLOR=#0000ff>odbcDisplayErrors</FONT><FONT COLOR=#000000>( </FONT><FONT COLOR=#000000><B>False</B></FONT><FONT COLOR=#000000> );</FONT></CODE></p>
+<p><CODE><FONT COLOR=#800000><B>if</B></FONT><FONT COLOR=#000000>( </FONT><FONT COLOR=#000000><B>NOT</B></FONT><FONT COLOR=#000000> </FONT><FONT COLOR=#0000ff>odbcExecuteSQL</FONT><FONT COLOR=#000000>(</FONT><FONT COLOR=#ff00ff>"INSERT
+      INTO testtable (fieldone,symbol) VALUES ( 'somevalue','"</FONT><FONT COLOR=#000000>+</FONT><FONT COLOR=#0000ff>Name</FONT><FONT COLOR=#000000>()+</FONT><FONT COLOR=#ff00ff>"'
+      )"</FONT><FONT COLOR=#000000>) ) <BR>
+{ <BR>
+&nbsp;&nbsp;</FONT><FONT COLOR=#0000ff>_TRACE</FONT><FONT COLOR=#000000>(</FONT><FONT COLOR=#ff00ff>"INSERT
+failed with following message : "</FONT><FONT COLOR=#000000> +</FONT><FONT COLOR=#0000ff>odbcGetLastError</FONT><FONT COLOR=#000000>()
+); <BR>
+}</FONT></CODE></p>
+<p><b>Example:</b></p>
+<p><b>How to use Views and Stored Procedures defined in Microsoft SQL Server.</b></p>
+<p><CODE><FONT COLOR=#000000></FONT><FONT COLOR=#0000ff>odbcOpenDatabase</FONT><FONT COLOR=#000000>(</FONT><FONT COLOR=#800080>"ODBC;DSN=PluginTest;UID=SA;APP=AmiBroker
+      for Win32;WSID=TJ64;DATABASE=mydb;Trusted_Connection=Yes;DRIVER={SQL Server};SERVER=TJ64"</FONT><FONT COLOR=#000000>); <BR>
+      <BR>
+</FONT><FONT COLOR=#008000>/* <BR>
+This example assumes that the following table exists in MS SQL: <BR>
+<BR>
+CREATE TABLE [dbo].[TestTable]( <BR>
+&nbsp;&nbsp;&nbsp;
+[SYMBOL] [varchar](30) NOT NULL, <BR>
+&nbsp;&nbsp;&nbsp;
+[DATE] [datetime] NOT NULL, <BR>
+&nbsp;&nbsp;&nbsp;
+[OPEN] [float] NULL, <BR>
+&nbsp;&nbsp;&nbsp;
+[HIGH] [float] NULL, <BR>
+&nbsp;&nbsp;&nbsp;
+[LOW] [float] NULL, <BR>
+&nbsp;&nbsp;&nbsp;
+[CLOSE] [float] NULL, <BR>
+&nbsp;&nbsp;&nbsp;
+[VOLUME] [float] NULL, <BR>
+CONSTRAINT [PK_TestTable] PRIMARY KEY CLUSTERED <BR>
+( <BR>
+&nbsp;&nbsp;&nbsp;
+[SYMBOL] ASC, <BR>
+&nbsp;&nbsp;&nbsp;
+[DATE] ASC <BR>
+)WITH (IGNORE_DUP_KEY = OFF) ON [PRIMARY] <BR>
+) ON [PRIMARY] <BR>
+*/</FONT><FONT COLOR=#000000> <BR>
+<BR>
+</FONT><FONT COLOR=#008000>/* <BR>
+Now create a sample view in MS SQL: <BR>
+<BR>
+CREATE VIEW dbo.TestView <BR>
+AS <BR>
+SELECT&nbsp;&nbsp;[CLOSE], [DATE] <BR>
+FROM&nbsp;&nbsp;&nbsp;&nbsp; dbo.TestTable <BR>
+WHERE&nbsp;&nbsp;(SYMBOL = ''A'') <BR>
+ORDER BY [DATE] ASC <BR>
+*/</FONT><FONT COLOR=#000000> <BR>
+<BR>
+</FONT><FONT COLOR=#008000>// here is how you call VIEW </FONT><FONT COLOR=#000000> <BR>
+</FONT><FONT COLOR=#000000><B>Graph0</B></FONT><FONT COLOR=#000000>=</FONT><FONT COLOR=#0000ff>odbcGetArraySQL</FONT><FONT COLOR=#000000>(</FONT><FONT COLOR=#800080>"SELECT
+* FROM TestView"</FONT><FONT COLOR=#000000>); <BR>
+<BR>
+</FONT><FONT COLOR=#008000>/* <BR>
+Now create stored procedure: <BR>
+<BR>
+CREATE PROCEDURE dbo.TestProcedure <BR>
+&nbsp;&nbsp;&nbsp;
+( <BR>
+&nbsp;&nbsp;&nbsp;
+@parameter1 VARCHAR <BR>
+&nbsp;&nbsp;&nbsp;
+) <BR>
+&nbsp;&nbsp;&nbsp; 
+<BR>
+AS <BR>
+&nbsp;&nbsp;&nbsp;
+SELECT [CLOSE], [DATE] FROM TestTable WHERE SYMBOL=@parameter1 <BR>
+&nbsp;&nbsp;&nbsp;
+ORDER BY [DATE] ASC <BR>
+&nbsp;&nbsp;&nbsp;
+RETURN <BR>
+<BR>
+*/</FONT><FONT COLOR=#000000> <BR>
+<BR>
+</FONT><FONT COLOR=#008000>// and here is how you call stored procedure with
+a parameter</FONT><FONT COLOR=#000000> <BR>
+</FONT><FONT COLOR=#000000><B>Graph1</B></FONT><FONT COLOR=#000000>=</FONT><FONT COLOR=#0000ff>odbcGetArraySQL</FONT><FONT COLOR=#000000>(</FONT><FONT COLOR=#800080>"TestProcedure "</FONT><FONT COLOR=#000000> + </FONT><FONT COLOR=#0000ff>Name</FONT><FONT COLOR=#000000>());</FONT></CODE></p>

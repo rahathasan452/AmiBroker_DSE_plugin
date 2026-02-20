@@ -1,0 +1,78 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: ODBC - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating command line "rc.exe /l 0x415 /fo"Release/ODBC.res" /d "NDEBUG" /d "_AFXDLL" "E:\Work\Plugins\ODBC\ODBC.rc"" 
+Creating temporary file "C:\Users\Tomek\AppData\Local\Temp\RSPABE8.tmp" with contents
+[
+/nologo /MD /W3 /GX /Zi /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /Fp"Release/ODBC.pch" /Yu"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
+"E:\Work\Plugins\ODBC\ConfigDlg.cpp"
+"E:\Work\Plugins\ODBC\Functions.cpp"
+"E:\Work\Plugins\ODBC\Global.cpp"
+"E:\Work\Plugins\ODBC\ODBC.cpp"
+"E:\Work\Plugins\ODBC\Plugin.cpp"
+"E:\Work\Plugins\ODBC\SRecordset.cpp"
+]
+Creating command line "cl.exe @C:\Users\Tomek\AppData\Local\Temp\RSPABE8.tmp" 
+Creating temporary file "C:\Users\Tomek\AppData\Local\Temp\RSPABE9.tmp" with contents
+[
+/nologo /MD /W3 /GX /Zi /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /Fp"Release/ODBC.pch" /Yc"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
+"E:\Work\Plugins\ODBC\StdAfx.cpp"
+]
+Creating command line "cl.exe @C:\Users\Tomek\AppData\Local\Temp\RSPABE9.tmp" 
+Creating temporary file "C:\Users\Tomek\AppData\Local\Temp\RSPABEA.tmp" with contents
+[
+/nologo /base:"0x69E00000" /subsystem:windows /dll /incremental:no /pdb:"Release/ODBC.pdb" /debug /machine:I386 /def:".\ODBC.def" /out:"Release/ODBC.dll" /implib:"Release/ODBC.lib" 
+.\Release\ConfigDlg.obj
+.\Release\Functions.obj
+.\Release\Global.obj
+.\Release\ODBC.obj
+.\Release\Plugin.obj
+.\Release\SRecordset.obj
+.\Release\StdAfx.obj
+.\Release\ODBC.res
+]
+Creating command line "link.exe @C:\Users\Tomek\AppData\Local\Temp\RSPABEA.tmp"
+<h3>Output Window</h3>
+Compiling resources...
+Compiling...
+StdAfx.cpp
+Compiling...
+ConfigDlg.cpp
+Functions.cpp
+E:\Work\Plugins\ODBC\Functions.cpp(158) : warning C4244: '=' : conversion from 'unsigned __int64' to 'unsigned int', possible loss of data
+Global.cpp
+ODBC.cpp
+Plugin.cpp
+SRecordset.cpp
+Generating Code...
+Linking...
+   Creating library Release/ODBC.lib and object Release/ODBC.exp
+Creating temporary file "C:\Users\Tomek\AppData\Local\Temp\RSPB020.bat" with contents
+[
+@echo off
+copy .\Release\ODBC.dll E:\Work\Broker\Plugins
+copy .\Release\ODBC.dll .\Release\ODBCA.dll
+REBASE -b 0x68F00000 .\Release\ODBCA.DLL
+copy .\Release\ODBCA.dll E:\Work\Broker\Plugins\
+]
+Creating command line "C:\Users\Tomek\AppData\Local\Temp\RSPB020.bat"
+
+        1 file(s) copied.
+        1 file(s) copied.
+
+REBASE: Total Size of mapping 0x00010000
+REBASE: Range 0x68f00000 -0x68f10000
+        1 file(s) copied.
+
+
+
+<h3>Results</h3>
+ODBC.dll - 0 error(s), 1 warning(s)
+</pre>
+</body>
+</html>

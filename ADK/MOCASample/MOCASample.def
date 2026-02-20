@@ -1,0 +1,7 @@
+; MOCASample.def : Declares the module parameters for the DLL.
+
+LIBRARY      "MOCASample"
+DESCRIPTION  'MOCASample Windows Dynamic Link Library'
+
+EXPORTS
+    ; Explicit exports can go here

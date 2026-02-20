@@ -1,0 +1,12 @@
+body {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 9pt}
+code {  font-family: Courier; font-size: 9px}
+td {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 8pt}
+h1 {  font-size: 12pt; font-weight: bold; font-family: Arial, Helvetica, sans-serif}
+h2 {  font-family: Arial, Helvetica, sans-serif; font-size: 10pt; font-weight: bold; font-style: italic}
+h3 {  font-family: "Times New Roman", Times, serif; font-size: 12pt; font-weight: normal; font-style: italic}
+h4 {  font-family: Arial, Helvetica, sans-serif; font-size: 8pt; font-weight: bold}
+h5 {  font-family: Arial, Helvetica, sans-serif; font-size: 8pt; font-weight: bold}
+.copyright {  font-size: 7pt; font-family: Verdana, Arial, Helvetica, sans-serif}
+.caption {  font-size: 16pt; font-family: Arial, Helvetica, sans-serif; color: #FFFFFF}
+.note {  font-size: 7pt; font-style: normal; font-family: Verdana, Arial, Helvetica, sans-serif}
+pre {  font-family: "Courier New", Courier, mono; font-size: 12px}

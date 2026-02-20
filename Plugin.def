@@ -1,0 +1,10 @@
+LIBRARY "DSE_DataPlugin"
+EXPORTS
+    GetPluginInfo
+    Init
+    Release
+    Configure
+    GetQuotesEx
+    SetTimeBase
+    Notify
+    GetRecentInfo

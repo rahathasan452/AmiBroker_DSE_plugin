@@ -1,0 +1,62 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: MOCASample - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating command line "rc.exe /l 0x415 /fo"Release/MOCASample.res" /d "NDEBUG" /d "_AFXDLL" "E:\Work\Plugins\MOCASample\MOCASample.rc"" 
+Creating temporary file "C:\Users\Tomek\AppData\Local\Temp\RSP9D7A.tmp" with contents
+[
+/nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /Fp"Release/MOCASample.pch" /Yu"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
+"E:\Work\Plugins\MOCASample\kiss_rand.cpp"
+"E:\Work\Plugins\MOCASample\MOCASample.cpp"
+"E:\Work\Plugins\MOCASample\Plugin.cpp"
+]
+Creating command line "cl.exe @C:\Users\Tomek\AppData\Local\Temp\RSP9D7A.tmp" 
+Creating temporary file "C:\Users\Tomek\AppData\Local\Temp\RSP9D7B.tmp" with contents
+[
+/nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_WINDLL" /D "_AFXDLL" /D "_MBCS" /D "_USRDLL" /Fp"Release/MOCASample.pch" /Yc"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
+"E:\Work\Plugins\MOCASample\StdAfx.cpp"
+]
+Creating command line "cl.exe @C:\Users\Tomek\AppData\Local\Temp\RSP9D7B.tmp" 
+Creating temporary file "C:\Users\Tomek\AppData\Local\Temp\RSP9D7C.tmp" with contents
+[
+/nologo /base:"0x69A00000" /subsystem:windows /dll /incremental:no /pdb:"Release/MOCASample.pdb" /machine:I386 /def:".\MOCASample.def" /out:"Release/MOCASample.dll" /implib:"Release/MOCASample.lib" /opt:ref /opt:nowin98 
+.\Release\kiss_rand.obj
+.\Release\MOCASample.obj
+.\Release\Plugin.obj
+.\Release\StdAfx.obj
+.\Release\MOCASample.res
+]
+Creating command line "link.exe @C:\Users\Tomek\AppData\Local\Temp\RSP9D7C.tmp"
+<h3>Output Window</h3>
+Compiling resources...
+Compiling...
+StdAfx.cpp
+Compiling...
+kiss_rand.cpp
+MOCASample.cpp
+Plugin.cpp
+Generating Code...
+Linking...
+   Creating library Release/MOCASample.lib and object Release/MOCASample.exp
+Creating temporary file "C:\Users\Tomek\AppData\Local\Temp\RSP9F90.bat" with contents
+[
+@echo off
+copy .\Release\MOCASample.DLL E:\Work\Broker\Plugins
+copy .\Release\MOCASample.DLL F:\AmiBroker\Plugins
+]
+Creating command line "C:\Users\Tomek\AppData\Local\Temp\RSP9F90.bat"
+
+        1 file(s) copied.
+        1 file(s) copied.
+
+
+
+<h3>Results</h3>
+MOCASample.dll - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>
