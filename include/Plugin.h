@@ -312,10 +312,6 @@ struct Quotation {
   float AuxData2;
 };
 
-// legacy (pre-5.27) data plugin structures
-// and conversion functions
-// #include "plugin_legacy.h"
-
 enum {
   CATEGORY_MARKET,
   CATEGORY_GROUP,

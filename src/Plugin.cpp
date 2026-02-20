@@ -262,15 +262,15 @@ extern "C" __declspec(dllexport) int Release(void) {
 #define ID_STATIC_POLL 1003
 #define ID_EDIT_POLL 1004
 #define ID_STATIC_STATUS 1005
+#define ID_CHK_PREFER_WEB 1006
+#define ID_EDIT_EXPORT_PATH 1007
+#define ID_EDIT_EXPORT_INT 1008
+#define ID_BTN_SAVE_NOW 1009
 #define ID_BTN_OK IDOK
 #define ID_BTN_CANCEL IDCANCEL
 #define ID_BTN_REFRESH 1010
 #define ID_BTN_SYNC 1011
 #define ID_BTN_BROWSE 1012
-
-#define ID_EDIT_EXPORT_PATH 1007
-#define ID_EDIT_EXPORT_INT 1008
-#define ID_BTN_SAVE_NOW 1009
 
 // Helper function for adding controls
 static void AddCtrl(WORD *&p, DWORD style, short x, short y, short cx, short cy,
@@ -318,12 +318,10 @@ static INT_PTR CALLBACK ConfigDlgProc(HWND hDlg, UINT msg, WPARAM wParam,
     sprintf_s(buf, "%d", g_engine.GetConfig().pollIntervalMs);
     SetDlgItemTextA(hDlg, ID_EDIT_POLL, buf);
 
-#define ID_CHK_PREFER_WEB 1006
-
-    // ... inside ConfigDlgProc WM_INITDIALOG ...
     // Connection status
-    const char *statusText = "Unknown";
-    // ... switch ...
+    const char *statusText = (g_engine.GetConnectionState() == CONN_CONNECTED)
+                                 ? "Connected"
+                                 : "Disconnected";
     SetDlgItemTextA(hDlg, ID_STATIC_STATUS, statusText);
 
     // Set Checkbox
@@ -616,10 +614,6 @@ PLUGINAPI int GetQuotesEx(const char *pszTicker, int nPeriodicity,
       CreateThread(NULL, 0, BackfillThreadProc, p, 0, NULL);
     }
     return (nLastValid < 0) ? 0 : nLastValid + 1;
-  }
-
-  if (bars.empty()) {
-    return (nLastValid < 0) ? 0 : nLastValid + 1; // No data available
   }
 
   // Fill the Quotation array

@@ -62,8 +62,6 @@ bool DseDataEngine::Initialize(const char *configPath) {
     fopen_s(&m_logFile, m_config.logFilePath, "a");
   }
 
-  // Correctly initialize critical section (cache mutex)
-  // InitializeCriticalSection(&m_csCache); // Removed, using std::mutex
   m_lastExportTime = time(NULL); // Start timer from now
 
   Log("DseDataEngine::Initialize — starting");
@@ -344,9 +342,6 @@ bool DseDataEngine::ValidateBar(const DseBar &bar) {
 }
 
 ///////////////////////////////////////////////////////////////////////////
-// ExtractTableRows — Pull <tr>...</tr> blocks from HTML
-///////////////////////////////////////////////////////////////////////////
-
 // ExtractTargetTable — Isolate the specific data table
 ///////////////////////////////////////////////////////////////////////////
 
