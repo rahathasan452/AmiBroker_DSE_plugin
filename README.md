@@ -213,6 +213,40 @@ Output: `build\Release\DSE_DataPlugin.dll`
 
 ---
 
+## 📊 Importing CSV Data (Short Guide)
+
+If you have historical CSV files and want to import them manually into AmiBroker:
+
+### 🔹 1. Setup the Format File
+1. Locate your AmiBroker installation folder (usually `C:\Program Files\AmiBroker` or `D:\software\AmiBroker`).
+2. Navigate to the `Formats\` subfolder.
+3. Create a new file named `dse.format` (or copy it from the `formats/` directory in this repo).
+4. Paste the following content:
+```
+$FORMAT Ticker, Date_YMD, Open, High, Low, Close, Volume
+$SKIPLINES 1
+$SEPARATOR ,
+$CONT 1
+$GROUP 255
+$AUTOADD 1
+```
+
+### 🔹 2. Update `import.types`
+1. In the same AmiBroker folder, open `import.types` with a text editor.
+2. Add this line at the bottom:
+```
+DSE CSV (*.csv)|*.csv|dse.format
+```
+3. Save and close the file.
+
+### 🔹 3. Import into AmiBroker
+1. Restart AmiBroker.
+2. Go to **File → Import ASCII**.
+3. Select **DSE CSV (*.csv)** from the file type dropdown.
+4. Select your `.csv` files and click **Open**.
+
+---
+
 ## 🔌 Exported API Functions
 
 These functions are called by AmiBroker via the plugin DLL interface:
