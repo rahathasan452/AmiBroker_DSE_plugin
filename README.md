@@ -215,11 +215,11 @@ Output: `build\Release\DSE_DataPlugin.dll`
 
 ---
 
-## 📊 Importing CSV Data (Short Guide)
+## 📊 Importing CSV Data (Short Guide) 
 
 If you have historical CSV files and want to import them manually into AmiBroker:
 
-### 🔹 1. Setup the Format File 
+### 🔹 1. Setup the Format File
 
 1. Locate your AmiBroker installation folder (usually `C:\Program Files\AmiBroker` or `D:\software\AmiBroker`).
 2. Navigate to the `Formats\` subfolder.
