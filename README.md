@@ -6,17 +6,17 @@ A **native C++ DLL** data plugin for [AmiBroker](https://www.amibroker.com/) tha
 
 ## ✨ Features
 
-| Feature | Description |
-|---------|-------------|
-| **Click-to-Load History** | Auto-fetches OHLCV history when you click any DSE symbol |
-| **CSV Seed Support** | Loads bulk historical data from local CSV files for speed |
-| **Hybrid Data Merge** | Merges local CSV seed + web data (configurable priority) |
-| **Real-Time Feed** | Live LTP/Volume updates during market hours (10:00–14:30 BST) |
-| **Bad Tick Filter** | Rejects bars where any OHLC price is zero or < 0.01 |
-| **Auto-Reconnect** | Exponential backoff reconnection on network failure |
-| **CSV Export** | Export cached symbol data back to CSV (on-demand or scheduled) |
-| **Zero Dependencies** | Uses WinInet (built into Windows) — no curl, Python, or 3rd-party libs |
-| **Symbol Sync** | One-click sync of all DSE symbols into AmiBroker's database |
+| Feature                         | Description                                                             |
+| ------------------------------- | ----------------------------------------------------------------------- |
+| **Click-to-Load History** | Auto-fetches OHLCV history when you click any DSE symbol                |
+| **CSV Seed Support**      | Loads bulk historical data from local CSV files for speed               |
+| **Hybrid Data Merge**     | Merges local CSV seed + web data (configurable priority)                |
+| **Real-Time Feed**        | Live LTP/Volume updates during market hours (10:00–14:30 BST)          |
+| **Bad Tick Filter**       | Rejects bars where any OHLC price is zero or < 0.01                     |
+| **Auto-Reconnect**        | Exponential backoff reconnection on network failure                     |
+| **CSV Export**            | Export cached symbol data back to CSV (on-demand or scheduled)          |
+| **Zero Dependencies**     | Uses WinInet (built into Windows) — no curl, Python, or 3rd-party libs |
+| **Symbol Sync**           | One-click sync of all DSE symbols into AmiBroker's database             |
 
 ---
 
@@ -64,6 +64,7 @@ AmiBroker
 ```
 
 **Data flow on first symbol load:**
+
 1. AmiBroker calls `GetQuotesEx("GP", ...)` — no cached data found
 2. Plugin starts a background thread (`BackfillThreadProc`)
 3. Thread calls `FetchHistoricalData()`:
@@ -79,46 +80,46 @@ AmiBroker
 
 ### `[General]`
 
-| Key | Default | Description |
-|-----|---------|-------------|
-| `HistoryYears` | `3` | Years of history to fetch on first symbol load |
-| `PollIntervalMs` | `5000` | Real-time polling interval in milliseconds |
-| `MarketOpenHour` | `10` | DSE session open hour (BST = UTC+6) |
-| `MarketOpenMinute` | `0` | DSE session open minute |
-| `MarketCloseHour` | `14` | DSE session close hour |
-| `MarketCloseMinute` | `30` | DSE session close minute |
-| `MaxReconnectAttempts` | `10` | Max retries before pausing for 60 seconds |
-| `HttpTimeoutSec` | `30` | Per-request HTTP timeout |
-| `UserAgent` | `Mozilla/5.0...` | Browser user-agent for HTTP requests |
-| `PreferWebData` | `1` | `1` = web overwrites local CSV; `0` = local CSV wins |
+| Key                      | Default            | Description                                              |
+| ------------------------ | ------------------ | -------------------------------------------------------- |
+| `HistoryYears`         | `3`              | Years of history to fetch on first symbol load           |
+| `PollIntervalMs`       | `5000`           | Real-time polling interval in milliseconds               |
+| `MarketOpenHour`       | `10`             | DSE session open hour (BST = UTC+6)                      |
+| `MarketOpenMinute`     | `0`              | DSE session open minute                                  |
+| `MarketCloseHour`      | `14`             | DSE session close hour                                   |
+| `MarketCloseMinute`    | `30`             | DSE session close minute                                 |
+| `MaxReconnectAttempts` | `10`             | Max retries before pausing for 60 seconds                |
+| `HttpTimeoutSec`       | `30`             | Per-request HTTP timeout                                 |
+| `UserAgent`            | `Mozilla/5.0...` | Browser user-agent for HTTP requests                     |
+| `PreferWebData`        | `1`              | `1` = web overwrites local CSV; `0` = local CSV wins |
 
 ### `[Endpoints]`
 
-| Key | Default |
-|-----|---------|
-| `LatestPrice` | `https://www.dsebd.org/latest_share_price_scroll_l.php` |
-| `DayEndArchive` | `https://www.dsebd.org/day_end_archive.php` |
+| Key                | Default                                                    |
+| ------------------ | ---------------------------------------------------------- |
+| `LatestPrice`    | `https://www.dsebd.org/latest_share_price_scroll_l.php`  |
+| `DayEndArchive`  | `https://www.dsebd.org/day_end_archive.php`              |
 | `AltLatestPrice` | `https://www.dsebd.org/latest_share_price_all_,ajax.php` |
 
 ### `[DataSource]`
 
-| Key | Default | Description |
-|-----|---------|-------------|
-| `CsvSeedPath` | *(empty)* | Folder with per-symbol CSV files (e.g., `GP.csv`, `BRAC.csv`). Leave empty for web-only mode. |
+| Key             | Default     | Description                                                                                      |
+| --------------- | ----------- | ------------------------------------------------------------------------------------------------ |
+| `CsvSeedPath` | *(empty)* | Folder with per-symbol CSV files (e.g.,`GP.csv`, `BRAC.csv`). Leave empty for web-only mode. |
 
 ### `[Export]`
 
-| Key | Default | Description |
-|-----|---------|-------------|
-| `ExportPath` | *(empty)* | Folder to export cached data as CSV files. Leave empty to disable. |
-| `ExportIntervalSec` | `0` | Auto-export every N seconds. `0` = manual only (use "Save CSVs Now" in dialog). |
+| Key                   | Default     | Description                                                                      |
+| --------------------- | ----------- | -------------------------------------------------------------------------------- |
+| `ExportPath`        | *(empty)* | Folder to export cached data as CSV files. Leave empty to disable.               |
+| `ExportIntervalSec` | `0`       | Auto-export every N seconds.`0` = manual only (use "Save CSVs Now" in dialog). |
 
 ### `[Debug]`
 
-| Key | Default | Description |
-|-----|---------|-------------|
-| `EnableLogging` | `0` | Set to `1` to enable debug logging |
-| `LogFilePath` | `dse_plugin.log` | Log file path (relative or absolute) |
+| Key               | Default            | Description                          |
+| ----------------- | ------------------ | ------------------------------------ |
+| `EnableLogging` | `0`              | Set to `1` to enable debug logging |
+| `LogFilePath`   | `dse_plugin.log` | Log file path (relative or absolute) |
 
 ---
 
@@ -127,12 +128,14 @@ AmiBroker
 The plugin supports two CSV formats for seed data:
 
 **Format A — with ticker column (standard):**
+
 ```csv
 Trading_Code,Date,Open,High,Low,Close,Volume
 GP,2024-01-02,360.00,365.50,358.00,363.20,1234567
 ```
 
 **Format B — date-first (simplified):**
+
 ```csv
 Date,Open,High,Low,Close,Volume
 2024-01-02,360.00,365.50,358.00,363.20,1234567
@@ -155,6 +158,7 @@ build_manual.bat
 ```
 
 Produces:
+
 - `build\Release\x86\DSE_DataPlugin_x86.dll` — for 32-bit AmiBroker
 - `build\Release\x64\DSE_DataPlugin_x64.dll` — for 64-bit AmiBroker
 
@@ -187,28 +191,26 @@ Output: `build\Release\DSE_DataPlugin.dll`
 ## 🚀 Installation
 
 1. **Copy the DLL** to AmiBroker's `Plugins` folder:
+
    ```
    D:\software\AmiBroker\Plugins\DSE_DataPlugin.dll
    ```
-   Use the x86 version if your AmiBroker is 32-bit (most installs are).
 
+   Use the x86 version if your AmiBroker is 32-bit (most installs are).
 2. **Copy the `config` folder** alongside the DLL:
+
    ```
    D:\software\AmiBroker\Plugins\config\dse_config.ini
    ```
-
 3. **Open AmiBroker** → **File → Database Settings**
-
 4. Under **Data Source**, select **"DSE Data Plugin"**
-
 5. Click **OK** — the plugin is now active
-
 6. *(Optional)* Click **Configure** to open the settings dialog:
+
    - Set history years
    - Set CSV seed path
    - Set export path
    - Click **Sync with Database** to import all DSE symbols
-
 7. Click any DSE symbol (e.g., `GP`, `BRAC`, `ACI`) — history loads automatically
 
 ---
@@ -217,11 +219,13 @@ Output: `build\Release\DSE_DataPlugin.dll`
 
 If you have historical CSV files and want to import them manually into AmiBroker:
 
-### 🔹 1. Setup the Format File
+### 🔹 1. Setup the Format File 
+
 1. Locate your AmiBroker installation folder (usually `C:\Program Files\AmiBroker` or `D:\software\AmiBroker`).
 2. Navigate to the `Formats\` subfolder.
 3. Create a new file named `dse.format` (or copy it from the `formats/` directory in this repo).
 4. Paste the following content:
+
 ```
 $FORMAT Ticker, Date_YMD, Open, High, Low, Close, Volume
 $SKIPLINES 1
@@ -232,14 +236,18 @@ $AUTOADD 1
 ```
 
 ### 🔹 2. Update `import.types`
+
 1. In the same AmiBroker folder, open `import.types` with a text editor.
 2. Add this line at the bottom:
+
 ```
 DSE CSV (*.csv)|*.csv|dse.format
 ```
+
 3. Save and close the file.
 
 ### 🔹 3. Import into AmiBroker
+
 1. Restart AmiBroker.
 2. Go to **File → Import ASCII**.
 3. Select **DSE CSV (*.csv)** from the file type dropdown.
@@ -251,37 +259,41 @@ DSE CSV (*.csv)|*.csv|dse.format
 
 These functions are called by AmiBroker via the plugin DLL interface:
 
-| Function | When Called | Purpose |
-|----------|-------------|---------|
-| `GetPluginInfo()` | On DLL load | Returns plugin name, version, type |
-| `Init()` | On plugin start | Loads config, initializes WinInet session |
-| `Release()` | On plugin stop | Stops feed thread, closes handles |
-| `Configure()` | User clicks "Configure" | Shows settings dialog |
-| `GetQuotesEx()` | Chart opened/refreshed | Returns OHLCV bars from cache |
-| `SetTimeBase()` | User changes interval | Handles daily/intraday mode switch |
-| `Notify()` | Database load/unload | Captures AB window handle, calls Init |
-| `GetRecentInfo()` | Real-time ticker window | Returns latest LTP/OHLCV from feed |
+| Function            | When Called             | Purpose                                   |
+| ------------------- | ----------------------- | ----------------------------------------- |
+| `GetPluginInfo()` | On DLL load             | Returns plugin name, version, type        |
+| `Init()`          | On plugin start         | Loads config, initializes WinInet session |
+| `Release()`       | On plugin stop          | Stops feed thread, closes handles         |
+| `Configure()`     | User clicks "Configure" | Shows settings dialog                     |
+| `GetQuotesEx()`   | Chart opened/refreshed  | Returns OHLCV bars from cache             |
+| `SetTimeBase()`   | User changes interval   | Handles daily/intraday mode switch        |
+| `Notify()`        | Database load/unload    | Captures AB window handle, calls Init     |
+| `GetRecentInfo()` | Real-time ticker window | Returns latest LTP/OHLCV from feed        |
 
 ---
 
 ## 🐛 Troubleshooting
 
 ### No data appears for a symbol
+
 - Check that the DLL and `config\` folder are in the same `Plugins` directory
 - Enable logging: set `EnableLogging=1` in `dse_config.ini` and check `dse_plugin.log`
 - Verify internet access to `https://www.dsebd.org`
 - Try clicking **Configure → Refresh Symbols** to confirm DSE is reachable
 
 ### Chart shows "messy" spikes or zeros
+
 - The bad-tick filter (any OHLC < 0.01) should reject these automatically
 - Check if the CSV seed files contain invalid rows (zero prices, missing data)
 - Enable logging and look for `"ValidateBar: rejected"` lines
 
 ### Plugin not listed in AmiBroker's Data Source
+
 - Ensure you copied the correct bitness DLL (x86 for 32-bit AmiBroker)
 - AmiBroker 32-bit requires `DSE_DataPlugin_x86.dll`, renamed to `DSE_DataPlugin.dll`
 
 ### "DSE website changed" — data stops loading
+
 - DSE occasionally changes their HTML table structure
 - This plugin uses two fallback parsing strategies; enable logging to diagnose
 - The `ParseHistoricalHtml` function scans for column names flexibly (DATE, OPEN, HIGH, LOW, CLOSE/LTP, VOLUME)
@@ -301,5 +313,5 @@ These functions are called by AmiBroker via the plugin DLL interface:
 
 MIT License
 
-Plugin skeleton based on the AmiBroker Plugin API (© 2001–2010 AmiBroker.com, all rights reserved).  
+Plugin skeleton based on the AmiBroker Plugin API (© 2001–2010 AmiBroker.com, all rights reserved).
 Scraping logic inspired by [bdshare](https://github.com/rochi88/bdshare) by Raisul Islam.
