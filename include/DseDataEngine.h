@@ -1,6 +1,12 @@
 ///////////////////////////////////////////////////////////////////////////
 // DseDataEngine.h — DSE HTTP Client & Data Parser
 //
+// [Explanation for non-developers]:
+// This is simply the "blueprint" for the DseDataEngine. It lists out all the
+// data structures (like what numbers make up a single "bar" or a "quote") and
+// lists all the jobs the engine is capable of doing without actually doing them
+// here.
+//
 // Replicates bdshare's scraping logic in native C++.
 // Uses WinInet for HTTP, parses HTML tables from dsebd.org.
 ///////////////////////////////////////////////////////////////////////////

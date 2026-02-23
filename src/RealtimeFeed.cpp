@@ -1,6 +1,13 @@
 ///////////////////////////////////////////////////////////////////////////
 // RealtimeFeed.cpp — Background Polling Thread Implementation
 //
+// [Explanation for non-developers]:
+// This file acts as the "autopilot" for the live, real-time market data. While
+// you look at your charts, this software runs a background timer. Every 5
+// seconds (or whatever you set), it silently taps the DSE server, grabs the
+// latest live prices, and pushes them down an invisible pipe to AmiBroker,
+// updating your screen instantly.
+//
 // Polls DSE for live price updates during market hours and pushes
 // them to AmiBroker via PostMessage.
 ///////////////////////////////////////////////////////////////////////////
@@ -9,7 +16,6 @@
 #include "Plugin.h"
 #include <cstring>
 #include <windows.h>
-
 
 ///////////////////////////////////////////////////////////////////////////
 // Constructor / Destructor
@@ -24,6 +30,11 @@ RealtimeFeed::~RealtimeFeed() { Stop(); }
 
 ///////////////////////////////////////////////////////////////////////////
 // Start — Launch the polling thread
+//
+// [Explanation for non-developers]:
+// This activates the "autopilot". It separates the "downloading timer" from the
+// main program so it runs completely independently. That means even if the
+// internet is slow or DSE is broken, your AmiBroker will never freeze up.
 ///////////////////////////////////////////////////////////////////////////
 
 bool RealtimeFeed::Start(HWND hMainWnd, DseDataEngine *engine) {
@@ -97,6 +108,12 @@ DWORD WINAPI RealtimeFeed::ThreadProc(LPVOID lpParam) {
 
 ///////////////////////////////////////////////////////////////////////////
 // PollLoop — Main polling loop
+//
+// [Explanation for non-developers]:
+// This is the heartbeat. It repeatedly checks: "Is the market open? Yes? Get
+// prices." "Did it fail? Wait 5 seconds, try again." "Is the market closed?
+// Sleep for 60 seconds." It repeats this loop infinitely until you close
+// AmiBroker.
 ///////////////////////////////////////////////////////////////////////////
 
 void RealtimeFeed::PollLoop() {
@@ -179,6 +196,11 @@ void RealtimeFeed::PollLoop() {
 
 ///////////////////////////////////////////////////////////////////////////
 // SendStreamingUpdate — Post a real-time update to AmiBroker
+//
+// [Explanation for non-developers]:
+// This packages the numbers we literally just fetched (Open, High, Low, Last
+// Price) and hands it off to AmiBroker's internal drawing engine. It tells
+// AmiBroker: "Hey, here are new numbers. Repaint the screen now."
 ///////////////////////////////////////////////////////////////////////////
 
 void RealtimeFeed::SendStreamingUpdate(const DseQuote &quote) {
@@ -232,6 +254,12 @@ void RealtimeFeed::SendStreamingUpdate(const DseQuote &quote) {
 
 ///////////////////////////////////////////////////////////////////////////
 // TryReconnect — Exponential backoff reconnection
+//
+// [Explanation for non-developers]:
+// When the DSE website goes down or ignores our request, we don't want to
+// attack them with thousands of requests and get banned. This function slowly
+// backs off. First it waits 5s, then 10s, then 20s... slowly letting the server
+// recover until it comes back to life.
 ///////////////////////////////////////////////////////////////////////////
 
 bool RealtimeFeed::TryReconnect() {

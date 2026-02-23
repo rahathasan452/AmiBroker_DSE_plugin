@@ -2,6 +2,11 @@
 // Plugin.h
 // Standard header file for all AmiBroker plug-ins
 //
+// [Explanation for non-developers]:
+// This is the "blueprint" or "table of contents" for the main AmiBroker plugin
+// interface. It defines all the standard functions that AmiBroker looks for
+// when it tries to load a third-party data plugin like ours.
+//
 // Version 2.1a
 ///////////////////////////////////////////////////////////////////////
 // Copyright (c) 2001-2010 AmiBroker.com. All rights reserved.

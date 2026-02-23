@@ -1,6 +1,13 @@
 ///////////////////////////////////////////////////////////////////////////
 // DseDataEngine.cpp — DSE HTTP Client & Data Parser Implementation
 //
+// [Explanation for non-developers]:
+// This is the true "engine" of the software. It handles connecting to the Dhaka
+// Stock Exchange (DSE) website, downloading web pages, searching through HTML
+// code (like reading raw code of a webpage) to find rows and columns containing
+// prices, and turning that text into numbers that AmiBroker can display as
+// candlestick charts.
+//
 // Uses WinInet to fetch data from dsebd.org, parses HTML tables,
 // and caches OHLCV bars per symbol. Replicates bdshare's logic.
 ///////////////////////////////////////////////////////////////////////////
@@ -118,6 +125,12 @@ void DseDataEngine::Shutdown() {
 
 ///////////////////////////////////////////////////////////////////////////
 // LoadConfig — Parse INI file
+//
+// [Explanation for non-developers]:
+// Every time you change a setting in the "Configure" window, it saves to a tiny
+// `.ini` file. This function reads that text file when you start the plugin so
+// the program remembers how many years of history to download and where to save
+// auto-export backups.
 ///////////////////////////////////////////////////////////////////////////
 
 bool DseDataEngine::LoadConfig(const char *path) {
@@ -191,6 +204,12 @@ bool DseDataEngine::LoadConfig(const char *path) {
 
 ///////////////////////////////////////////////////////////////////////////
 // HttpGet — Fetch a URL using WinInet
+//
+// [Explanation for non-developers]:
+// Think of this as opening a webpage in an invisible browser like Chrome or
+// Edge. It connects to `https://www.dsebd.org/...`, waits for a response, and
+// saves the entire webpage source code as a giant block of text, preparing it
+// for reading.
 ///////////////////////////////////////////////////////////////////////////
 
 bool DseDataEngine::HttpGet(const char *url, std::string &outBody) {
@@ -531,6 +550,13 @@ std::vector<std::string> DseDataEngine::ParseTableRow(const std::string &row) {
 
 ///////////////////////////////////////////////////////////////////////////
 // ParseHistoricalHtml — Parse day_end_archive page into bars
+//
+// [Explanation for non-developers]:
+// This function reads the giant block of text downloaded from the DSE website
+// specifically for historical data. It searches for the word "Date", "Close",
+// "Volume", etc. and goes line by line, column by column, throwing out the HTML
+// formatting tags and pulling out the pure numbers (Open, High, Low, Close
+// prices) for past days.
 ///////////////////////////////////////////////////////////////////////////
 
 bool DseDataEngine::ParseHistoricalHtml(const std::string &html,
@@ -678,6 +704,12 @@ bool DseDataEngine::ParseHistoricalHtml(const std::string &html,
 
 ///////////////////////////////////////////////////////////////////////////
 // ParseLatestPriceHtml — Parse latest_share_price page
+//
+// [Explanation for non-developers]:
+// This is exactly like scanning the live "Latest Price" scrolling board on the
+// DSE homepage. Every few seconds, this function extracts the single most
+// up-to-date trade price (LTP) and volume for every stock simultaneously. This
+// makes your live charts "tick" and update without refreshing.
 ///////////////////////////////////////////////////////////////////////////
 
 bool DseDataEngine::ParseLatestPriceHtml(const std::string &html,
