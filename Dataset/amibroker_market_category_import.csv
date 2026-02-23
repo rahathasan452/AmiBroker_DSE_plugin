@@ -1,0 +1,651 @@
+Ticker, MarketName, GroupName
+ABBANK,Bank,Category - B
+ALARABANK,Bank,Category - A
+BANKASIA,Bank,Category - A
+BRACBANK,Bank,Category - A
+CITYBANK,Bank,Category - A
+DHAKABANK,Bank,Category - A
+DUTCHBANGL,Bank,Category - A
+EBL,Bank,Category - A
+EXIMBANK,Bank,Category - A
+FIRSTSBANK,Bank,Category - Z
+GIB,Bank,Category - Z
+ICBIBANK,Bank,Category - Z
+IFIC,Bank,Category - B
+ISLAMIBANK,Bank,Category - A
+JAMUNABANK,Bank,Category - A
+MERCANBANK,Bank,Category - A
+MIDLANDBNK,Bank,Category - B
+MTB,Bank,Category - A
+NBL,Bank,Category - Z
+NCCBANK,Bank,Category - A
+NRBBANK,Bank,Category - A
+NRBCBANK,Bank,Category - A
+ONEBANKPLC,Bank,Category - B
+PREMIERBAN,Bank,Category - A
+PRIMEBANK,Bank,Category - A
+PUBALIBANK,Bank,Category - A
+RUPALIBANK,Bank,Category - B
+SBACBANK,Bank,Category - B
+SHAHJABANK,Bank,Category - A
+SIBL,Bank,Category - A
+SOUTHEASTB,Bank,Category - A
+STANDBANKL,Bank,Category - B
+TRUSTBANK,Bank,Category - A
+UCB,Bank,Category - A
+UNIONBANK,Bank,Category - Z
+UTTARABANK,Bank,Category - A
+ARAMITCEM,Cement,Category - Z
+CONFIDCEM,Cement,Category - A
+CROWNCEMNT,Cement,Category - A
+HEIDELBCEM,Cement,Category - A
+LHB,Cement,Category - A
+MEGHNACEM,Cement,Category - Z
+PREMIERCEM,Cement,Category - A
+FUWANGCER,Ceramics Sector,Category - B
+MONNOCERA,Ceramics Sector,Category - B
+RAKCERAMIC,Ceramics Sector,Category - A
+SPCERAMICS,Ceramics Sector,Category - B
+STANCERAM,Ceramics Sector,Category - Z
+ABBLPBOND,Corporate Bond,Category - N/A
+AIBLPBOND,Corporate Bond,Category - N/A
+APSCLBOND,Corporate Bond,Category - N/A
+BANKASI1PB,Corporate Bond,Category - N/A
+BEXGSUKUK,Corporate Bond,Category - N/A
+CBLPBOND,Corporate Bond,Category - N/A
+DBLPBOND,Corporate Bond,Category - N/A
+IBBL2PBOND,Corporate Bond,Category - N/A
+IBBLPBOND,Corporate Bond,Category - N/A
+MBPLCPBOND,Corporate Bond,Category - N/A
+MTBPBOND,Corporate Bond,Category - N/A
+PBLPBOND,Corporate Bond,Category - N/A
+PREBPBOND,Corporate Bond,Category - N/A
+SEB1PBOND,Corporate Bond,Category - N/A
+SJIBLPBOND,Corporate Bond,Category - N/A
+UCB2PBOND,Corporate Bond,Category - N/A
+DEBARACEM,Debenture,Category - N/A
+DEBBDLUGG,Debenture,Category - N/A
+DEBBDWELD,Debenture,Category - N/A
+DEBBDZIPP,Debenture,Category - N/A
+DEBBXDENIM,Debenture,Category - N/A
+DEBBXFISH,Debenture,Category - N/A
+DEBBXKNI,Debenture,Category - N/A
+DEBBXTEX,Debenture,Category - N/A
+AFTABAUTO,Engineering,Category - Z
+ANWARGALV,Engineering,Category - A
+APOLOISPAT,Engineering,Category - Z
+ATLASBANG,Engineering,Category - Z
+AZIZPIPES,Engineering,Category - Z
+BBS,Engineering,Category - B
+BBSCABLES,Engineering,Category - B
+BDAUTOCA,Engineering,Category - B
+BDLAMPS,Engineering,Category - A
+BDTHAI,Engineering,Category - B
+BENGALWTL,Engineering,Category - B
+BSRMLTD,Engineering,Category - A
+BSRMSTEEL,Engineering,Category - A
+COPPERTECH,Engineering,Category - B
+DESHBANDHU,Engineering,Category - B
+DOMINAGE,Engineering,Category - B
+ECABLES,Engineering,Category - B
+GOLDENSON,Engineering,Category - B
+GPHISPAT,Engineering,Category - B
+IFADAUTOS,Engineering,Category - B
+KAY&QUE,Engineering,Category - B
+KDSALTD,Engineering,Category - A
+MIRAKHTER,Engineering,Category - A
+MONNOAGML,Engineering,Category - B
+NAHEEACP,Engineering,Category - B
+NAVANACNG,Engineering,Category - Z
+NPOLYMER,Engineering,Category - B
+NTLTUBES,Engineering,Category - B
+OAL,Engineering,Category - Z
+OIMEX,Engineering,Category - Z
+QUASEMIND,Engineering,Category - A
+RANFOUNDRY,Engineering,Category - A
+RENWICKJA,Engineering,Category - Z
+RSRMSTEEL,Engineering,Category - Z
+RUNNERAUTO,Engineering,Category - A
+SALAMCRST,Engineering,Category - Z
+SHURWID,Engineering,Category - Z
+SINGERBD,Engineering,Category - A
+SSSTEEL,Engineering,Category - Z
+WALTONHIL,Engineering,Category - A
+WMSHIPYARD,Engineering,Category - Z
+YPL,Engineering,Category - Z
+BAYLEASING,Financial Institutions,Category - Z
+BDFINANCE,Financial Institutions,Category - Z
+BIFC,Financial Institutions,Category - Z
+DBH,Financial Institutions,Category - A
+FAREASTFIN,Financial Institutions,Category - Z
+FASFIN,Financial Institutions,Category - Z
+FIRSTFIN,Financial Institutions,Category - Z
+GSPFINANCE,Financial Institutions,Category - Z
+ICB,Financial Institutions,Category - B
+IDLC,Financial Institutions,Category - A
+ILFSL,Financial Institutions,Category - Z
+IPDC,Financial Institutions,Category - A
+ISLAMICFIN,Financial Institutions,Category - Z
+LANKABAFIN,Financial Institutions,Category - A
+MIDASFIN,Financial Institutions,Category - Z
+NHFIL,Financial Institutions,Category - A
+PHOENIXFIN,Financial Institutions,Category - Z
+PLFSL,Financial Institutions,Category - Z
+PREMIERLEA,Financial Institutions,Category - Z
+PRIMEFIN,Financial Institutions,Category - Z
+UNIONCAP,Financial Institutions,Category - Z
+UNITEDFIN,Financial Institutions,Category - A
+UTTARAFIN,Financial Institutions,Category - Z
+AMCL(PRAN),Food & Allied,Category - A
+APEXFOODS,Food & Allied,Category - A
+BANGAS,Food & Allied,Category - B
+BATBC,Food & Allied,Category - A
+BDTHAIFOOD,Food & Allied,Category - B
+BEACHHATCH,Food & Allied,Category - Z
+EMERALDOIL,Food & Allied,Category - Z
+FINEFOODS,Food & Allied,Category - A
+FUWANGFOOD,Food & Allied,Category - Z
+GEMINISEA,Food & Allied,Category - Z
+GHAIL,Food & Allied,Category - B
+LOVELLO,Food & Allied,Category - A
+MEGCONMILK,Food & Allied,Category - Z
+MEGHNAPET,Food & Allied,Category - Z
+NTC,Food & Allied,Category - Z
+OLYMPIC,Food & Allied,Category - A
+RAHIMAFOOD,Food & Allied,Category - B
+RDFOOD,Food & Allied,Category - B
+SHYAMPSUG,Food & Allied,Category - Z
+UNILEVERCL,Food & Allied,Category - A
+ZEALBANGLA,Food & Allied,Category - Z
+AOL,Fuel & Power,Category - Z
+BARKAPOWER,Fuel & Power,Category - Z
+BDWELDING,Fuel & Power,Category - Z
+BPPL,Fuel & Power,Category - B
+CVOPRL,Fuel & Power,Category - A
+DESCO,Fuel & Power,Category - Z
+DOREENPWR,Fuel & Power,Category - A
+EASTRNLUB,Fuel & Power,Category - A
+EPGL,Fuel & Power,Category - B
+GBBPOWER,Fuel & Power,Category - Z
+INTRACO,Fuel & Power,Category - Z
+JAMUNAOIL,Fuel & Power,Category - A
+KPCL,Fuel & Power,Category - Z
+LINDEBD,Fuel & Power,Category - A
+LRBDL,Fuel & Power,Category - Z
+MJLBD,Fuel & Power,Category - A
+MPETROLEUM,Fuel & Power,Category - A
+PADMAOIL,Fuel & Power,Category - A
+POWERGRID,Fuel & Power,Category - Z
+SPCL,Fuel & Power,Category - A
+SUMITPOWER,Fuel & Power,Category - A
+TITASGAS,Fuel & Power,Category - B
+UPGDCL,Fuel & Power,Category - A
+TB10Y0127,G-SEC (T.Bond),Category - N/A
+TB10Y0130,G-SEC (T.Bond),Category - N/A
+TB10Y0132,G-SEC (T.Bond),Category - N/A
+TB10Y0135,G-SEC (T.Bond),Category - N/A
+TB10Y0231,G-SEC (T.Bond),Category - N/A
+TB10Y0234,G-SEC (T.Bond),Category - N/A
+TB10Y0333,G-SEC (T.Bond),Category - N/A
+TB10Y0335,G-SEC (T.Bond),Category - N/A
+TB10Y0429,G-SEC (T.Bond),Category - N/A
+TB10Y0434,G-SEC (T.Bond),Category - N/A
+TB10Y0530,G-SEC (T.Bond),Category - N/A
+TB10Y0531,G-SEC (T.Bond),Category - N/A
+TB10Y0532,G-SEC (T.Bond),Category - N/A
+TB10Y0535,G-SEC (T.Bond),Category - N/A
+TB10Y0628,G-SEC (T.Bond),Category - N/A
+TB10Y0629,G-SEC (T.Bond),Category - N/A
+TB10Y0630,G-SEC (T.Bond),Category - N/A
+TB10Y0632,G-SEC (T.Bond),Category - N/A
+TB10Y0634,G-SEC (T.Bond),Category - N/A
+TB10Y0726,G-SEC (T.Bond),Category - N/A
+TB10Y0730,G-SEC (T.Bond),Category - N/A
+TB10Y0731,G-SEC (T.Bond),Category - N/A
+TB10Y0735,G-SEC (T.Bond),Category - N/A
+TB10Y0829,G-SEC (T.Bond),Category - N/A
+TB10Y0833,G-SEC (T.Bond),Category - N/A
+TB10Y0932,G-SEC (T.Bond),Category - N/A
+TB10Y1027,G-SEC (T.Bond),Category - N/A
+TB10Y1030,G-SEC (T.Bond),Category - N/A
+TB10Y1031,G-SEC (T.Bond),Category - N/A
+TB10Y1128,G-SEC (T.Bond),Category - N/A
+TB10Y1135,G-SEC (T.Bond),Category - N/A
+TB10Y1229,G-SEC (T.Bond),Category - N/A
+TB10Y1232,G-SEC (T.Bond),Category - N/A
+TB15Y0127,G-SEC (T.Bond),Category - N/A
+TB15Y0128,G-SEC (T.Bond),Category - N/A
+TB15Y0129,G-SEC (T.Bond),Category - N/A
+TB15Y0227,G-SEC (T.Bond),Category - N/A
+TB15Y0228,G-SEC (T.Bond),Category - N/A
+TB15Y0229,G-SEC (T.Bond),Category - N/A
+TB15Y0326,G-SEC (T.Bond),Category - N/A
+TB15Y0327,G-SEC (T.Bond),Category - N/A
+TB15Y0328,G-SEC (T.Bond),Category - N/A
+TB15Y0329,G-SEC (T.Bond),Category - N/A
+TB15Y0339,G-SEC (T.Bond),Category - N/A
+TB15Y0340,G-SEC (T.Bond),Category - N/A
+TB15Y0426,G-SEC (T.Bond),Category - N/A
+TB15Y0427,G-SEC (T.Bond),Category - N/A
+TB15Y0428,G-SEC (T.Bond),Category - N/A
+TB15Y0429,G-SEC (T.Bond),Category - N/A
+TB15Y0431,G-SEC (T.Bond),Category - N/A
+TB15Y0437,G-SEC (T.Bond),Category - N/A
+TB15Y0526,G-SEC (T.Bond),Category - N/A
+TB15Y0527,G-SEC (T.Bond),Category - N/A
+TB15Y0528,G-SEC (T.Bond),Category - N/A
+TB15Y0529,G-SEC (T.Bond),Category - N/A
+TB15Y0535,G-SEC (T.Bond),Category - N/A
+TB15Y0626,G-SEC (T.Bond),Category - N/A
+TB15Y0627,G-SEC (T.Bond),Category - N/A
+TB15Y0628,G-SEC (T.Bond),Category - N/A
+TB15Y0629,G-SEC (T.Bond),Category - N/A
+TB15Y0635,G-SEC (T.Bond),Category - N/A
+TB15Y0637,G-SEC (T.Bond),Category - N/A
+TB15Y0727,G-SEC (T.Bond),Category - N/A
+TB15Y0728,G-SEC (T.Bond),Category - N/A
+TB15Y0729,G-SEC (T.Bond),Category - N/A
+TB15Y0730,G-SEC (T.Bond),Category - N/A
+TB15Y0736,G-SEC (T.Bond),Category - N/A
+TB15Y0826,G-SEC (T.Bond),Category - N/A
+TB15Y0828,G-SEC (T.Bond),Category - N/A
+TB15Y0829,G-SEC (T.Bond),Category - N/A
+TB15Y0840,G-SEC (T.Bond),Category - N/A
+TB15Y0926,G-SEC (T.Bond),Category - N/A
+TB15Y0927,G-SEC (T.Bond),Category - N/A
+TB15Y0928,G-SEC (T.Bond),Category - N/A
+TB15Y0929,G-SEC (T.Bond),Category - N/A
+TB15Y0930,G-SEC (T.Bond),Category - N/A
+TB15Y0933,G-SEC (T.Bond),Category - N/A
+TB15Y1026,G-SEC (T.Bond),Category - N/A
+TB15Y1027,G-SEC (T.Bond),Category - N/A
+TB15Y1028,G-SEC (T.Bond),Category - N/A
+TB15Y1029,G-SEC (T.Bond),Category - N/A
+TB15Y1126,G-SEC (T.Bond),Category - N/A
+TB15Y1127,G-SEC (T.Bond),Category - N/A
+TB15Y1128,G-SEC (T.Bond),Category - N/A
+TB15Y1129,G-SEC (T.Bond),Category - N/A
+TB15Y1133,G-SEC (T.Bond),Category - N/A
+TB15Y1226,G-SEC (T.Bond),Category - N/A
+TB15Y1227,G-SEC (T.Bond),Category - N/A
+TB15Y1228,G-SEC (T.Bond),Category - N/A
+TB20Y0128,G-SEC (T.Bond),Category - N/A
+TB20Y0129,G-SEC (T.Bond),Category - N/A
+TB20Y0131,G-SEC (T.Bond),Category - N/A
+TB20Y0132,G-SEC (T.Bond),Category - N/A
+TB20Y0133,G-SEC (T.Bond),Category - N/A
+TB20Y0134,G-SEC (T.Bond),Category - N/A
+TB20Y0143,G-SEC (T.Bond),Category - N/A
+TB20Y0228,G-SEC (T.Bond),Category - N/A
+TB20Y0229,G-SEC (T.Bond),Category - N/A
+TB20Y0230,G-SEC (T.Bond),Category - N/A
+TB20Y0231,G-SEC (T.Bond),Category - N/A
+TB20Y0232,G-SEC (T.Bond),Category - N/A
+TB20Y0233,G-SEC (T.Bond),Category - N/A
+TB20Y0234,G-SEC (T.Bond),Category - N/A
+TB20Y0328,G-SEC (T.Bond),Category - N/A
+TB20Y0329,G-SEC (T.Bond),Category - N/A
+TB20Y0330,G-SEC (T.Bond),Category - N/A
+TB20Y0331,G-SEC (T.Bond),Category - N/A
+TB20Y0332,G-SEC (T.Bond),Category - N/A
+TB20Y0333,G-SEC (T.Bond),Category - N/A
+TB20Y0334,G-SEC (T.Bond),Category - N/A
+TB20Y0342,G-SEC (T.Bond),Category - N/A
+TB20Y0428,G-SEC (T.Bond),Category - N/A
+TB20Y0429,G-SEC (T.Bond),Category - N/A
+TB20Y0430,G-SEC (T.Bond),Category - N/A
+TB20Y0431,G-SEC (T.Bond),Category - N/A
+TB20Y0432,G-SEC (T.Bond),Category - N/A
+TB20Y0433,G-SEC (T.Bond),Category - N/A
+TB20Y0434,G-SEC (T.Bond),Category - N/A
+TB20Y0436,G-SEC (T.Bond),Category - N/A
+TB20Y0528,G-SEC (T.Bond),Category - N/A
+TB20Y0529,G-SEC (T.Bond),Category - N/A
+TB20Y0530,G-SEC (T.Bond),Category - N/A
+TB20Y0531,G-SEC (T.Bond),Category - N/A
+TB20Y0532,G-SEC (T.Bond),Category - N/A
+TB20Y0533,G-SEC (T.Bond),Category - N/A
+TB20Y0534,G-SEC (T.Bond),Category - N/A
+TB20Y0540,G-SEC (T.Bond),Category - N/A
+TB20Y0545,G-SEC (T.Bond),Category - N/A
+TB20Y0628,G-SEC (T.Bond),Category - N/A
+TB20Y0629,G-SEC (T.Bond),Category - N/A
+TB20Y0630,G-SEC (T.Bond),Category - N/A
+TB20Y0631,G-SEC (T.Bond),Category - N/A
+TB20Y0632,G-SEC (T.Bond),Category - N/A
+TB20Y0633,G-SEC (T.Bond),Category - N/A
+TB20Y0634,G-SEC (T.Bond),Category - N/A
+TB20Y0639,G-SEC (T.Bond),Category - N/A
+TB20Y0640,G-SEC (T.Bond),Category - N/A
+TB20Y0641,G-SEC (T.Bond),Category - N/A
+TB20Y0642,G-SEC (T.Bond),Category - N/A
+TB20Y0727,G-SEC (T.Bond),Category - N/A
+TB20Y0728,G-SEC (T.Bond),Category - N/A
+TB20Y0729,G-SEC (T.Bond),Category - N/A
+TB20Y0730,G-SEC (T.Bond),Category - N/A
+TB20Y0731,G-SEC (T.Bond),Category - N/A
+TB20Y0732,G-SEC (T.Bond),Category - N/A
+TB20Y0733,G-SEC (T.Bond),Category - N/A
+TB20Y0734,G-SEC (T.Bond),Category - N/A
+TB20Y0735,G-SEC (T.Bond),Category - N/A
+TB20Y0744,G-SEC (T.Bond),Category - N/A
+TB20Y0827,G-SEC (T.Bond),Category - N/A
+TB20Y0828,G-SEC (T.Bond),Category - N/A
+TB20Y0829,G-SEC (T.Bond),Category - N/A
+TB20Y0830,G-SEC (T.Bond),Category - N/A
+TB20Y0831,G-SEC (T.Bond),Category - N/A
+TB20Y0832,G-SEC (T.Bond),Category - N/A
+TB20Y0833,G-SEC (T.Bond),Category - N/A
+TB20Y0834,G-SEC (T.Bond),Category - N/A
+TB20Y0845,G-SEC (T.Bond),Category - N/A
+TB20Y0927,G-SEC (T.Bond),Category - N/A
+TB20Y0928,G-SEC (T.Bond),Category - N/A
+TB20Y0930,G-SEC (T.Bond),Category - N/A
+TB20Y0931,G-SEC (T.Bond),Category - N/A
+TB20Y0932,G-SEC (T.Bond),Category - N/A
+TB20Y0933,G-SEC (T.Bond),Category - N/A
+TB20Y0934,G-SEC (T.Bond),Category - N/A
+TB20Y1027,G-SEC (T.Bond),Category - N/A
+TB20Y1028,G-SEC (T.Bond),Category - N/A
+TB20Y1029,G-SEC (T.Bond),Category - N/A
+TB20Y1030,G-SEC (T.Bond),Category - N/A
+TB20Y1031,G-SEC (T.Bond),Category - N/A
+TB20Y1032,G-SEC (T.Bond),Category - N/A
+TB20Y1033,G-SEC (T.Bond),Category - N/A
+TB20Y1034,G-SEC (T.Bond),Category - N/A
+TB20Y1127,G-SEC (T.Bond),Category - N/A
+TB20Y1128,G-SEC (T.Bond),Category - N/A
+TB20Y1130,G-SEC (T.Bond),Category - N/A
+TB20Y1131,G-SEC (T.Bond),Category - N/A
+TB20Y1132,G-SEC (T.Bond),Category - N/A
+TB20Y1133,G-SEC (T.Bond),Category - N/A
+TB20Y1134,G-SEC (T.Bond),Category - N/A
+TB20Y1135,G-SEC (T.Bond),Category - N/A
+TB20Y1138,G-SEC (T.Bond),Category - N/A
+TB20Y1227,G-SEC (T.Bond),Category - N/A
+TB20Y1228,G-SEC (T.Bond),Category - N/A
+TB20Y1229,G-SEC (T.Bond),Category - N/A
+TB20Y1230,G-SEC (T.Bond),Category - N/A
+TB20Y1231,G-SEC (T.Bond),Category - N/A
+TB20Y1232,G-SEC (T.Bond),Category - N/A
+TB20Y1233,G-SEC (T.Bond),Category - N/A
+TB20Y1242,G-SEC (T.Bond),Category - N/A
+TB2Y0127,G-SEC (T.Bond),Category - N/A
+TB2Y0227,G-SEC (T.Bond),Category - N/A
+TB2Y0327,G-SEC (T.Bond),Category - N/A
+TB2Y0426,G-SEC (T.Bond),Category - N/A
+TB2Y0427,G-SEC (T.Bond),Category - N/A
+TB2Y0526,G-SEC (T.Bond),Category - N/A
+TB2Y0527,G-SEC (T.Bond),Category - N/A
+TB2Y0626,G-SEC (T.Bond),Category - N/A
+TB2Y0627,G-SEC (T.Bond),Category - N/A
+TB2Y0727,G-SEC (T.Bond),Category - N/A
+TB2Y0826,G-SEC (T.Bond),Category - N/A
+TB2Y0927,G-SEC (T.Bond),Category - N/A
+TB2Y1026,G-SEC (T.Bond),Category - N/A
+TB2Y1126,G-SEC (T.Bond),Category - N/A
+TB2Y1127,G-SEC (T.Bond),Category - N/A
+TB5Y0128,G-SEC (T.Bond),Category - N/A
+TB5Y0230,G-SEC (T.Bond),Category - N/A
+TB5Y0326,G-SEC (T.Bond),Category - N/A
+TB5Y0327,G-SEC (T.Bond),Category - N/A
+TB5Y0428,G-SEC (T.Bond),Category - N/A
+TB5Y0429,G-SEC (T.Bond),Category - N/A
+TB5Y0430,G-SEC (T.Bond),Category - N/A
+TB5Y0527,G-SEC (T.Bond),Category - N/A
+TB5Y0529,G-SEC (T.Bond),Category - N/A
+TB5Y0626,G-SEC (T.Bond),Category - N/A
+TB5Y0628,G-SEC (T.Bond),Category - N/A
+TB5Y0630,G-SEC (T.Bond),Category - N/A
+TB5Y0727,G-SEC (T.Bond),Category - N/A
+TB5Y0828,G-SEC (T.Bond),Category - N/A
+TB5Y0926,G-SEC (T.Bond),Category - N/A
+TB5Y0928,G-SEC (T.Bond),Category - N/A
+TB5Y0930,G-SEC (T.Bond),Category - N/A
+TB5Y1029,G-SEC (T.Bond),Category - N/A
+TB5Y1126,G-SEC (T.Bond),Category - N/A
+TB5Y1127,G-SEC (T.Bond),Category - N/A
+TB5Y1128,G-SEC (T.Bond),Category - N/A
+TB5Y1130,G-SEC (T.Bond),Category - N/A
+TB5Y1228,G-SEC (T.Bond),Category - N/A
+TB5Y1229,G-SEC (T.Bond),Category - N/A
+AGRANINS,Insurance,Category - A
+ASIAINS,Insurance,Category - A
+ASIAPACINS,Insurance,Category - A
+BGIC,Insurance,Category - A
+BNICL,Insurance,Category - A
+CENTRALINS,Insurance,Category - A
+CITYGENINS,Insurance,Category - A
+CLICL,Insurance,Category - B
+CONTININS,Insurance,Category - B
+CRYSTALINS,Insurance,Category - A
+DELTALIFE,Insurance,Category - A
+DGIC,Insurance,Category - B
+DHAKAINS,Insurance,Category - A
+EASTERNINS,Insurance,Category - A
+EASTLAND,Insurance,Category - A
+EIL,Insurance,Category - B
+FAREASTLIF,Insurance,Category - Z
+FEDERALINS,Insurance,Category - A
+GLOBALINS,Insurance,Category - A
+GREENDELT,Insurance,Category - A
+ICICL,Insurance,Category - A
+ISLAMIINS,Insurance,Category - A
+JANATAINS,Insurance,Category - A
+KARNAPHULI,Insurance,Category - A
+MEGHNAINS,Insurance,Category - A
+MEGHNALIFE,Insurance,Category - A
+MERCINS,Insurance,Category - A
+NATLIFEINS,Insurance,Category - A
+NITOLINS,Insurance,Category - A
+NORTHRNINS,Insurance,Category - A
+PADMALIFE,Insurance,Category - Z
+PARAMOUNT,Insurance,Category - A
+PEOPLESINS,Insurance,Category - A
+PHENIXINS,Insurance,Category - A
+PIONEERINS,Insurance,Category - A
+POPULARLIF,Insurance,Category - A
+PRAGATIINS,Insurance,Category - A
+PRAGATILIF,Insurance,Category - A
+PRIMEINSUR,Insurance,Category - A
+PRIMELIFE,Insurance,Category - B
+PROGRESLIF,Insurance,Category - Z
+PROVATIINS,Insurance,Category - A
+PURABIGEN,Insurance,Category - A
+RELIANCINS,Insurance,Category - A
+REPUBLIC,Insurance,Category - A
+RUPALIINS,Insurance,Category - A
+RUPALILIFE,Insurance,Category - A
+SANDHANINS,Insurance,Category - A
+SICL,Insurance,Category - B
+SIPLC,Insurance,Category - A
+SONALILIFE,Insurance,Category - A
+SONARBAINS,Insurance,Category - A
+STANDARINS,Insurance,Category - A
+SUNLIFEINS,Insurance,Category - B
+TAKAFULINS,Insurance,Category - A
+TILIL,Insurance,Category - B
+UNIONINS,Insurance,Category - A
+UNITEDINS,Insurance,Category - A
+AAMRANET,IT Sector,Category - Z
+AAMRATECH,IT Sector,Category - Z
+ADNTEL,IT Sector,Category - A
+AGNISYSL,IT Sector,Category - B
+BDCOM,IT Sector,Category - A
+DAFODILCOM,IT Sector,Category - B
+EGEN,IT Sector,Category - B
+GENEXIL,IT Sector,Category - B
+INTECH,IT Sector,Category - B
+ISNLTD,IT Sector,Category - B
+ITC,IT Sector,Category - A
+JUTESPINN,Jute,Category - Z
+NORTHERN,Jute,Category - Z
+SONALIANSH,Jute,Category - Z
+AMANFEED,Miscellaneous,Category - A
+ARAMIT,Miscellaneous,Category - A
+BERGERPBL,Miscellaneous,Category - A
+BEXIMCO,Miscellaneous,Category - B
+BSC,Miscellaneous,Category - A
+GQBALLPEN,Miscellaneous,Category - A
+HAMI,Miscellaneous,Category - Z
+INDEXAGRO,Miscellaneous,Category - A
+KBPPWBIL,Miscellaneous,Category - A
+MIRACLEIND,Miscellaneous,Category - Z
+NFML,Miscellaneous,Category - Z
+SAVAREFR,Miscellaneous,Category - Z
+SINOBANGLA,Miscellaneous,Category - A
+SKTRIMS,Miscellaneous,Category - Z
+USMANIAGL,Miscellaneous,Category - Z
+1JANATAMF,Mutual Funds,Category - A
+1STPRIMFMF,Mutual Funds,Category - A
+ABB1STMF,Mutual Funds,Category - A
+AIBL1STIMF,Mutual Funds,Category - A
+ATCSLGF,Mutual Funds,Category - A
+CAPITECGBF,Mutual Funds,Category - A
+CAPMBDBLMF,Mutual Funds,Category - A
+CAPMIBBLMF,Mutual Funds,Category - A
+DBH1STMF,Mutual Funds,Category - A
+EBL1STMF,Mutual Funds,Category - A
+EBLNRBMF,Mutual Funds,Category - A
+EXIM1STMF,Mutual Funds,Category - A
+FBFIF,Mutual Funds,Category - A
+GLDNJMF,Mutual Funds,Category - A
+GRAMEENS2,Mutual Funds,Category - A
+GREENDELMF,Mutual Funds,Category - A
+ICB3RDNRB,Mutual Funds,Category - A
+ICBAGRANI1,Mutual Funds,Category - A
+ICBAMCL2ND,Mutual Funds,Category - A
+ICBEPMF1S1,Mutual Funds,Category - A
+ICBSONALI1,Mutual Funds,Category - A
+IFIC1STMF,Mutual Funds,Category - A
+IFILISLMF1,Mutual Funds,Category - A
+LRGLOBMF1,Mutual Funds,Category - A
+MBL1STMF,Mutual Funds,Category - A
+NCCBLMF1,Mutual Funds,Category - A
+PF1STMF,Mutual Funds,Category - A
+PHPMF1,Mutual Funds,Category - A
+POPULAR1MF,Mutual Funds,Category - A
+PRIME1ICBA,Mutual Funds,Category - A
+RELIANCE1,Mutual Funds,Category - A
+SEMLFBSLGF,Mutual Funds,Category - A
+SEMLIBBLSF,Mutual Funds,Category - A
+SEMLLECMF,Mutual Funds,Category - A
+TRUSTB1MF,Mutual Funds,Category - A
+VAMLBDMF1,Mutual Funds,Category - A
+VAMLRBBF,Mutual Funds,Category - A
+BPML,Paper & Printing,Category - Z
+HAKKANIPUL,Paper & Printing,Category - B
+KPPL,Paper & Printing,Category - Z
+MAGURAPLEX,Paper & Printing,Category - A
+MONOSPOOL,Paper & Printing,Category - A
+SONALIPAPR,Paper & Printing,Category - A
+ACI,Pharmaceuticals & Chemicals,Category - A
+ACIFORMULA,Pharmaceuticals & Chemicals,Category - A
+ACMELAB,Pharmaceuticals & Chemicals,Category - A
+ACMEPL,Pharmaceuticals & Chemicals,Category - B
+ACTIVEFINE,Pharmaceuticals & Chemicals,Category - Z
+ADVENT,Pharmaceuticals & Chemicals,Category - Z
+AFCAGRO,Pharmaceuticals & Chemicals,Category - Z
+AMBEEPHA,Pharmaceuticals & Chemicals,Category - A
+ASIATICLAB,Pharmaceuticals & Chemicals,Category - A
+BEACONPHAR,Pharmaceuticals & Chemicals,Category - A
+BXPHARMA,Pharmaceuticals & Chemicals,Category - A
+CENTRALPHL,Pharmaceuticals & Chemicals,Category - Z
+FARCHEM,Pharmaceuticals & Chemicals,Category - B
+GHCL,Pharmaceuticals & Chemicals,Category - Z
+IBNSINA,Pharmaceuticals & Chemicals,Category - A
+IBP,Pharmaceuticals & Chemicals,Category - B
+JHRML,Pharmaceuticals & Chemicals,Category - B
+JMISMDL,Pharmaceuticals & Chemicals,Category - A
+KEYACOSMET,Pharmaceuticals & Chemicals,Category - Z
+KOHINOOR,Pharmaceuticals & Chemicals,Category - A
+LIBRAINFU,Pharmaceuticals & Chemicals,Category - Z
+MARICO,Pharmaceuticals & Chemicals,Category - A
+NAVANAPHAR,Pharmaceuticals & Chemicals,Category - A
+ORIONINFU,Pharmaceuticals & Chemicals,Category - A
+ORIONPHARM,Pharmaceuticals & Chemicals,Category - Z
+PHARMAID,Pharmaceuticals & Chemicals,Category - A
+RECKITTBEN,Pharmaceuticals & Chemicals,Category - A
+RENATA,Pharmaceuticals & Chemicals,Category - A
+SALVO,Pharmaceuticals & Chemicals,Category - B
+SILCOPHL,Pharmaceuticals & Chemicals,Category - B
+SILVAPHL,Pharmaceuticals & Chemicals,Category - B
+SQURPHARMA,Pharmaceuticals & Chemicals,Category - A
+TECHNODRUG,Pharmaceuticals & Chemicals,Category - A
+WATACHEM,Pharmaceuticals & Chemicals,Category - A
+EHL,Services & Real Estate,Category - A
+SAIFPOWER,Services & Real Estate,Category - Z
+SAMORITA,Services & Real Estate,Category - B
+SAPORTL,Services & Real Estate,Category - A
+APEXFOOT,Tannery Industries,Category - A
+APEXTANRY,Tannery Industries,Category - B
+BATASHOE,Tannery Industries,Category - A
+FORTUNE,Tannery Industries,Category - Z
+LEGACYFOOT,Tannery Industries,Category - B
+SAMATALETH,Tannery Industries,Category - B
+BSCPLC,Telecommunication,Category - A
+GP,Telecommunication,Category - A
+ROBI,Telecommunication,Category - A
+ACFL,Textile,Category - A
+AIL,Textile,Category - Z
+AL-HAJTEX,Textile,Category - B
+ALIF,Textile,Category - Z
+ALLTEX,Textile,Category - Z
+ANLIMAYARN,Textile,Category - Z
+APEXSPINN,Textile,Category - A
+ARGONDENIM,Textile,Category - A
+CNATEX,Textile,Category - Z
+DACCADYE,Textile,Category - Z
+DELTASPINN,Textile,Category - Z
+DSHGARME,Textile,Category - Z
+DSSL,Textile,Category - B
+DULAMIACOT,Textile,Category - Z
+ENVOYTEX,Textile,Category - A
+ESQUIRENIT,Textile,Category - A
+ETL,Textile,Category - B
+FAMILYTEX,Textile,Category - Z
+FEKDIL,Textile,Category - A
+GENNEXT,Textile,Category - Z
+HFL,Textile,Category - Z
+HRTEX,Textile,Category - Z
+HWAWELLTEX,Textile,Category - A
+KTL,Textile,Category - Z
+MAKSONSPIN,Textile,Category - Z
+MALEKSPIN,Textile,Category - A
+MATINSPINN,Textile,Category - A
+METROSPIN,Textile,Category - Z
+MHSML,Textile,Category - B
+MITHUNKNIT,Textile,Category - Z
+MLDYEING,Textile,Category - B
+MONNOFABR,Textile,Category - B
+NEWLINE,Textile,Category - Z
+NURANI,Textile,Category - Z
+PDL,Textile,Category - Z
+PRIMETEX,Textile,Category - Z
+PTL,Textile,Category - A
+QUEENSOUTH,Textile,Category - B
+RAHIMTEXT,Textile,Category - A
+REGENTTEX,Textile,Category - Z
+RINGSHINE,Textile,Category - Z
+SAFKOSPINN,Textile,Category - Z
+SAIHAMCOT,Textile,Category - B
+SAIHAMTEX,Textile,Category - B
+SHARPIND,Textile,Category - B
+SHASHADNIM,Textile,Category - B
+SHEPHERD,Textile,Category - B
+SIMTEX,Textile,Category - A
+SONARGAON,Textile,Category - B
+SQUARETEXT,Textile,Category - A
+STYLECRAFT,Textile,Category - Z
+TALLUSPIN,Textile,Category - Z
+TAMIJTEX,Textile,Category - A
+TOSRIFA,Textile,Category - B
+TUNGHAI,Textile,Category - Z
+VFSTDL,Textile,Category - B
+ZAHEENSPIN,Textile,Category - Z
+ZAHINTEX,Textile,Category - Z
+BDSERVICE,Travel & Leisure,Category - Z
+BESTHLDNG,Travel & Leisure,Category - Z
+PENINSULA,Travel & Leisure,Category - B
+SEAPEARL,Travel & Leisure,Category - B
+UNIQUEHRL,Travel & Leisure,Category - A

@@ -1,0 +1,6 @@
+$FORMAT Ticker, MarketName, GroupName
+$DEBUG 1
+$SEPARATOR ,
+$OVERWRITE 1
+$NOQUOTES 1
+$AUTOADD 1
