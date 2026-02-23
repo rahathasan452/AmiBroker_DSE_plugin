@@ -61,6 +61,9 @@ target_include_directories(DSE_DataPlugin PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+target_compile_definitions(DSE_DataPlugin PRIVATE _USRDLL)
+
+
 # ───────────────────────────────────────────────────────
 # Link Libraries (Windows system libs only — zero deps)
 # ───────────────────────────────────────────────────────
@@ -69,6 +72,8 @@ target_link_libraries(DSE_DataPlugin PRIVATE
     wininet     # HTTP requests
     ws2_32      # Winsock
     comctl32    # Common controls for dialog
+    shell32     # Shell API for Browse dialog
+    ole32       # COM API for TaskMemFree
 )
 
 # ───────────────────────────────────────────────────────

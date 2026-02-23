@@ -1,0 +1,20 @@
+# Build directories and files
+build/
+*.obj
+*.lib
+*.dll
+*.exe
+*.exp
+*.pdb
+*.ilk
+*.log
+*.tlog
+*.suo
+*.idb
+
+# Temporary directories
+temp/
+
+# IDE directories
+.vs/
+.vscode/
