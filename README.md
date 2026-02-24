@@ -29,6 +29,9 @@ AmiBroker_DSE_plugin/
 ├── build_manual.bat         # Quick-build batch script (no CMake needed)
 ├── config/
 │   └── dse_config.ini       # Plugin configuration (INI format)
+├── formats/
+│   ├── dse.format           # AmiBroker import format for DSE CSV files
+│   └── dse_categories.format # AmiBroker import format for categories
 ├── include/
 │   ├── Plugin.h             # AmiBroker ADK v2.1 header (official, unmodified)
 │   ├── DseDataEngine.h      # DSE HTTP client & HTML parser class

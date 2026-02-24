@@ -4,6 +4,7 @@ EXPORTS
     Init
     Release
     Configure
+    GetQuotes
     GetQuotesEx
     SetTimeBase
     Notify

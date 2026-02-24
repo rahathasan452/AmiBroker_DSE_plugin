@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <cstdarg>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <ctime>
 
@@ -45,7 +46,7 @@ bool DseDataEngine::Initialize(const char *configPath) {
   // Load configuration
   if (!LoadConfig(configPath)) {
     // Use defaults if config file not found
-    m_config.historyYears = 3;
+    m_config.historyDays = 365; // Default to 1 year of days
     m_config.pollIntervalMs = 5000;
     m_config.marketOpenHour = 10;
     m_config.marketOpenMinute = 0;
@@ -61,8 +62,11 @@ bool DseDataEngine::Initialize(const char *configPath) {
              "https://www.dsebd.org/day_end_archive.php");
     strcpy_s(m_config.altLatestPriceUrl,
              "https://www.dsebd.org/latest_share_price_all_,ajax.php");
-    m_config.enableLogging = false;
+    m_config.enableLogging = true; // FORCED TRUE FOR DEBUGGING
   }
+
+  // Force logging anyway for this debug session
+  m_config.enableLogging = true;
 
   // Open logging
   if (m_config.enableLogging && m_config.logFilePath[0]) {
@@ -138,8 +142,8 @@ bool DseDataEngine::LoadConfig(const char *path) {
     return false;
 
   // [General]
-  m_config.historyYears =
-      GetPrivateProfileIntA("General", "HistoryYears", 3, path);
+  m_config.historyDays =
+      GetPrivateProfileIntA("Settings", "HistoryDays", 365, path);
   m_config.pollIntervalMs =
       GetPrivateProfileIntA("General", "PollIntervalMs", 5000, path);
   m_config.marketOpenHour =
@@ -266,6 +270,93 @@ bool DseDataEngine::HttpGet(const char *url, std::string &outBody) {
 }
 
 ///////////////////////////////////////////////////////////////////////////
+// HttpPost — Fetch a URL using WinInet with POST body
+///////////////////////////////////////////////////////////////////////////
+
+bool DseDataEngine::HttpPost(const char *url, const char *payload,
+                             std::string &outBody) {
+  if (!m_hInternet) {
+    Log("ERROR: HttpPost — no WinInet session");
+    return false;
+  }
+
+  Log("HttpPost: %s with payload len %zu", url, strlen(payload));
+
+  // Crack URL to get host and path
+  URL_COMPONENTSA urlComp = {0};
+  char host[256] = {0};
+  char path[1024] = {0};
+
+  urlComp.dwStructSize = sizeof(urlComp);
+  urlComp.lpszHostName = host;
+  urlComp.dwHostNameLength = sizeof(host);
+  urlComp.lpszUrlPath = path;
+  urlComp.dwUrlPathLength = sizeof(path);
+
+  if (!InternetCrackUrlA(url, 0, 0, &urlComp)) {
+    Log("ERROR: InternetCrackUrl failed, error=%lu", GetLastError());
+    return false;
+  }
+
+  HINTERNET hConnect =
+      InternetConnectA(m_hInternet, host, INTERNET_DEFAULT_HTTPS_PORT, NULL,
+                       NULL, INTERNET_SERVICE_HTTP, 0, 0);
+
+  if (!hConnect) {
+    Log("ERROR: InternetConnect failed, error=%lu", GetLastError());
+    return false;
+  }
+
+  const char *acceptTypes[] = {"*/*", NULL};
+  HINTERNET hRequest =
+      HttpOpenRequestA(hConnect, "POST", path, NULL, NULL, acceptTypes,
+                       INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE |
+                           INTERNET_FLAG_SECURE,
+                       0);
+
+  if (!hRequest) {
+    Log("ERROR: HttpOpenRequest failed, error=%lu", GetLastError());
+    InternetCloseHandle(hConnect);
+    return false;
+  }
+
+  const char *headers = "Content-Type: application/x-www-form-urlencoded";
+  DWORD headersLen = (DWORD)strlen(headers);
+
+  if (!HttpSendRequestA(hRequest, headers, headersLen, (LPVOID)payload,
+                        (DWORD)strlen(payload))) {
+    Log("ERROR: HttpSendRequest failed, error=%lu", GetLastError());
+    InternetCloseHandle(hRequest);
+    InternetCloseHandle(hConnect);
+    return false;
+  }
+
+  // Read response
+  outBody.clear();
+  char buffer[8192];
+  DWORD bytesRead = 0;
+
+  while (InternetReadFile(hRequest, buffer, sizeof(buffer) - 1, &bytesRead) &&
+         bytesRead > 0) {
+    buffer[bytesRead] = '\0';
+    outBody.append(buffer, bytesRead);
+    bytesRead = 0;
+  }
+
+  InternetCloseHandle(hRequest);
+  InternetCloseHandle(hConnect);
+
+  if (outBody.empty()) {
+    Log("WARNING: HttpPost — empty response");
+    return false;
+  }
+
+  m_connState = CONN_CONNECTED;
+  Log("HttpPost: received %zu bytes", outBody.size());
+  return true;
+}
+
+///////////////////////////////////////////////////////////////////////////
 // BuildHistoryUrl — Construct day_end_archive URL
 ///////////////////////////////////////////////////////////////////////////
 
@@ -323,18 +414,24 @@ std::string DseDataEngine::Trim(const std::string &s) {
 double DseDataEngine::SafeStod(const std::string &s, double fallback) {
   if (s.empty())
     return fallback;
-  try {
-    // Remove commas from numbers (e.g., "1,234.56" -> "1234.56")
-    std::string clean;
-    clean.reserve(s.size());
-    for (char c : s) {
-      if (c != ',')
-        clean += c;
-    }
-    return std::stod(clean);
-  } catch (...) {
+
+  // Remove commas from numbers (e.g., "1,234.56" -> "1234.56")
+  std::string clean;
+  clean.reserve(s.size());
+  for (char c : s) {
+    if (c != ',')
+      clean += c;
+  }
+
+  if (clean.empty())
+    return fallback;
+
+  char *endPtr = nullptr;
+  double val = strtod(clean.c_str(), &endPtr);
+  if (endPtr == clean.c_str()) {
     return fallback;
   }
+  return val;
 }
 
 bool DseDataEngine::ValidateBar(const DseBar &bar) {
@@ -847,10 +944,19 @@ bool DseDataEngine::ParseLatestPriceHtml(const std::string &html,
 bool DseDataEngine::FetchHistoricalData(const char *symbol,
                                         const char *startDate,
                                         const char *endDate,
-                                        std::vector<DseBar> &outBars) {
+                                        std::vector<DseBar> &outBars,
+                                        std::function<void()> onProgress) {
   Log("FetchHistoricalData: %s from %s to %s", symbol, startDate, endDate);
 
-  // 1. Load from CSV Seed first
+  outBars.clear();
+
+  // Redirect Amarstock Indices to special scraper logic
+  if (IsAmarstockIndex(symbol)) {
+    return FetchAmarstockIndexData(symbol, startDate, endDate, outBars,
+                                   onProgress);
+  }
+
+  // 1. Check local seed CSV if enabled first
   std::vector<DseBar> seedBars;
   if (LoadCsvSeed(symbol, seedBars)) {
     Log("FetchHistoricalData: Loaded %zu bars from CSV seed for %s",
@@ -1014,16 +1120,24 @@ bool DseDataEngine::RefreshSymbolList() {
     return false;
 
   std::lock_guard<std::mutex> lock(m_mutex);
-  m_symbols.clear();
+  std::vector<std::string> fetched;
 
   for (const auto &q : quotes) {
     if (q.symbol[0]) {
-      m_symbols.push_back(q.symbol);
+      fetched.push_back(q.symbol);
     }
   }
 
+  // Forcefully inject Amarstock Special Indices because they do not appear on
+  // the DSE homepage
+  fetched.push_back("00DS30");
+  fetched.push_back("00DSES");
+  fetched.push_back("00DSEX");
+  fetched.push_back("00DSMEX");
+
   // Sort alphabetically
-  std::sort(m_symbols.begin(), m_symbols.end());
+  std::sort(fetched.begin(), fetched.end());
+  m_symbols = fetched;
 
   Log("RefreshSymbolList: found %zu symbols", m_symbols.size());
   return true;
@@ -1049,6 +1163,256 @@ bool DseDataEngine::IsMarketOpen() const {
   }
 
   return (nowMinutes >= openMinutes && nowMinutes <= closeMinutes);
+}
+
+///////////////////////////////////////////////////////////////////////////
+// Amarstock Index Scraper Integration
+///////////////////////////////////////////////////////////////////////////
+
+bool DseDataEngine::IsAmarstockIndex(const char *symbol) {
+  if (!symbol)
+    return false;
+  return (_stricmp(symbol, "00DS30") == 0 || _stricmp(symbol, "00DSES") == 0 ||
+          _stricmp(symbol, "00DSEX") == 0 || _stricmp(symbol, "00DSMEX") == 0);
+}
+
+bool DseDataEngine::ParseAmarstockCsv(const std::string &csv,
+                                      const char *targetSymbol,
+                                      std::vector<DseBar> &outBars) {
+  // Split string by lines
+  size_t pos = 0;
+  size_t lastPos = 0;
+  std::vector<std::string> lines;
+  while ((pos = csv.find('\n', lastPos)) != std::string::npos) {
+    std::string line = Trim(csv.substr(lastPos, pos - lastPos));
+    if (!line.empty())
+      lines.push_back(line);
+    lastPos = pos + 1;
+  }
+  if (lastPos < csv.size()) {
+    std::string line = Trim(csv.substr(lastPos));
+    if (!line.empty())
+      lines.push_back(line);
+  }
+
+  if (lines.empty())
+    return false;
+
+  // Expected columns: Date, Scrip, Open, High, Low, Close, Volume, Value, Trade
+  int parsedCount = 0;
+  for (size_t i = 1; i < lines.size(); ++i) { // Skip header
+    std::string &line = lines[i];
+    std::vector<std::string> parts;
+    size_t commaPos = 0, lastComma = 0;
+    while ((commaPos = line.find(',', lastComma)) != std::string::npos) {
+      parts.push_back(Trim(line.substr(lastComma, commaPos - lastComma)));
+      lastComma = commaPos + 1;
+    }
+    parts.push_back(Trim(line.substr(lastComma)));
+
+    // Ensure we have at least 7 columns
+    if (parts.size() < 7)
+      continue;
+
+    // Check target symbol matches
+    if (_stricmp(parts[1].c_str(), targetSymbol) != 0)
+      continue;
+
+    DseBar bar;
+    memset(&bar, 0, sizeof(bar));
+    bar.valid = true;
+
+    // Parse Date (YYYY-MM-DD, MM/DD/YYYY, or YYYYMMDD)
+    std::string dateStr = parts[0];
+    if (dateStr.size() >= 10 && dateStr[4] == '-') {
+      // YYYY-MM-DD
+      bar.year = (int)SafeStod(dateStr.substr(0, 4));
+      bar.month = (int)SafeStod(dateStr.substr(5, 2));
+      bar.day = (int)SafeStod(dateStr.substr(8, 2));
+    } else if (dateStr.size() == 8) {
+      // YYYYMMDD
+      bar.year = (int)SafeStod(dateStr.substr(0, 4));
+      bar.month = (int)SafeStod(dateStr.substr(4, 2));
+      bar.day = (int)SafeStod(dateStr.substr(6, 2));
+    } else {
+      // Assume Amarstock changed format or invalid date string
+      continue;
+    }
+
+    bar.open = SafeStod(parts[2]);
+    bar.high = SafeStod(parts[3]);
+    bar.low = SafeStod(parts[4]);
+    bar.close = SafeStod(parts[5]);
+    bar.volume = SafeStod(parts[6]);
+
+    // Optional Trades and Value might be missing on some lines
+    if (parts.size() >= 9) {
+      bar.value = SafeStod(parts[7]);
+      bar.trade = SafeStod(parts[8]);
+    }
+
+    bar.valid = ValidateBar(bar);
+    if (bar.valid) {
+      outBars.push_back(bar);
+      parsedCount++;
+    }
+  }
+
+  return parsedCount > 0;
+}
+
+bool DseDataEngine::FetchAmarstockIndexData(const char *symbol,
+                                            const char *startDate,
+                                            const char *endDate,
+                                            std::vector<DseBar> &outBars,
+                                            std::function<void()> onProgress) {
+  Log("FetchAmarstockIndexData: %s from %s to %s", symbol, startDate, endDate);
+
+  // Parse start/end dates for iteration
+  int sy = 0, sm = 0, sd = 0, ey = 0, em = 0, ed = 0;
+  if (sscanf_s(startDate, "%04d-%02d-%02d", &sy, &sm, &sd) != 3) {
+    Log("ERROR: Invalid startDate %s", startDate);
+    return false;
+  }
+  if (sscanf_s(endDate, "%04d-%02d-%02d", &ey, &em, &ed) != 3) {
+    Log("ERROR: Invalid endDate %s", endDate);
+    return false;
+  }
+
+  SYSTEMTIME st = {0};
+  st.wYear = sy;
+  st.wMonth = sm;
+  st.wDay = sd;
+
+  SYSTEMTIME endSt = {0};
+  endSt.wYear = ey;
+  endSt.wMonth = em;
+  endSt.wDay = ed;
+
+  // Windows filetime comparison tricks
+  FILETIME ftCur, ftEnd;
+  SystemTimeToFileTime(&st, &ftCur);
+  SystemTimeToFileTime(&endSt, &ftEnd);
+  ULARGE_INTEGER uCur, uEnd;
+  uCur.LowPart = ftCur.dwLowDateTime;
+  uCur.HighPart = ftCur.dwHighDateTime;
+  uEnd.LowPart = ftEnd.dwLowDateTime;
+  uEnd.HighPart = ftEnd.dwHighDateTime;
+
+  int daysFetched = 0;
+  int missingDays = 0;
+
+  // Read cache safely
+  std::vector<DseBar> existing;
+  {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    auto it = m_cache.find(symbol);
+    if (it != m_cache.end()) {
+      existing = it->second;
+    }
+  }
+
+  outBars = existing; // start with existing data
+
+  // Iterate day by day
+  while (uCur.QuadPart <= uEnd.QuadPart) {
+    // Unpack current date
+    FileTimeToSystemTime(&ftCur, &st);
+
+    char curDateStr[32];
+    sprintf_s(curDateStr, "%04d-%02d-%02d", st.wYear, st.wMonth, st.wDay);
+
+    // Skip fetching if already in cache (duplicate check logic as used by
+    // standard DSE engine)
+    bool haveIt = false;
+    for (const auto &bar : outBars) {
+      if (bar.year == st.wYear && bar.month == st.wMonth &&
+          bar.day == st.wDay) {
+        haveIt = true;
+        break;
+      }
+    }
+
+    if (!haveIt) {
+      missingDays++;
+
+      char payload[256];
+      // User requested adjusted data.
+      sprintf_s(payload, "date=%s&type=adjusted", curDateStr);
+
+      Log("FetchAmarstockIndexData: Requesting missing day %s", curDateStr);
+
+      std::string responseBody;
+      if (HttpPost("https://www.amarstock.com/data/download/CSV", payload,
+                   responseBody)) {
+        if (responseBody.size() > 50) {
+          // Parse directly
+          std::vector<DseBar> parsedBars;
+          if (ParseAmarstockCsv(responseBody, symbol, parsedBars)) {
+            outBars.insert(outBars.end(), parsedBars.begin(), parsedBars.end());
+            daysFetched++;
+
+            Log("FetchAmarstockIndexData: Collected bar(s) for %s. Running "
+                "total: %zu bars (batching, no AB update yet)",
+                curDateStr, outBars.size());
+          } else {
+            Log("FetchAmarstockIndexData: Parse returned 0 valid rows for %s. "
+                "Likely empty market. Marking as empty in cache to prevent "
+                "re-fetch loops.",
+                curDateStr);
+            // Insert dummy/empty bar with VALID=FALSE so we remember we checked
+            // this date!
+            DseBar dummy;
+            memset(&dummy, 0, sizeof(dummy));
+            dummy.year = st.wYear;
+            dummy.month = st.wMonth;
+            dummy.day = st.wDay;
+            dummy.valid = false;
+
+            outBars.push_back(dummy);
+          }
+        }
+      } else {
+        Log("WARNING: FetchAmarstockIndexData HTTP POST failed for %s",
+            curDateStr);
+      }
+
+      // Very small sleep to be gentle
+      Sleep(50);
+    }
+
+    // Add 1 day (864000000000 100-ns intervals)
+    uCur.QuadPart += 864000000000ULL;
+    ftCur.dwLowDateTime = uCur.LowPart;
+    ftCur.dwHighDateTime = uCur.HighPart;
+  }
+
+  // All days fetched — now do one single sort, cache update, and AB
+  // notification
+  std::sort(outBars.begin(), outBars.end(),
+            [](const DseBar &a, const DseBar &b) {
+              if (a.year != b.year)
+                return a.year < b.year;
+              if (a.month != b.month)
+                return a.month < b.month;
+              return a.day < b.day;
+            });
+
+  {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_cache[symbol] = outBars;
+  }
+
+  Log("FetchAmarstockIndexData: Completed. Requested %d missing days, "
+      "fetched %d days. Total bars: %zu. Firing single onProgress().",
+      missingDays, daysFetched, outBars.size());
+
+  // Fire ONE single update to AmiBroker with the full batch
+  if (onProgress && daysFetched > 0) {
+    onProgress();
+  }
+
+  return (daysFetched > 0 || !outBars.empty());
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -1188,11 +1552,10 @@ bool DseDataEngine::LoadCsvSeed(const char *symbol,
       continue;
 
     // Parse Date (YYYY-MM-DD)
-    try {
-      bar.year = std::stoi(std::string(dateStr, 4));
-      bar.month = std::stoi(std::string(dateStr + 5, 2));
-      bar.day = std::stoi(std::string(dateStr + 8, 2));
-    } catch (...) {
+    bar.year = atoi(std::string(dateStr, 4).c_str());
+    bar.month = atoi(std::string(dateStr + 5, 2).c_str());
+    bar.day = atoi(std::string(dateStr + 8, 2).c_str());
+    if (bar.year == 0 || bar.month == 0 || bar.day == 0) {
       continue;
     }
 

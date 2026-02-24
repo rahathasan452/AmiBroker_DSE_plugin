@@ -14,6 +14,7 @@
 #ifndef DSE_DATA_ENGINE_H
 #define DSE_DATA_ENGINE_H
 
+#include <functional>
 #include <map>
 #include <mutex>
 #include <string>
@@ -54,7 +55,7 @@ struct DseQuote {
 
 // Configuration loaded from INI
 struct DseConfig {
-  int historyYears;
+  int historyDays;
   int pollIntervalMs;
   int marketOpenHour, marketOpenMinute;
   int marketCloseHour, marketCloseMinute;
@@ -102,7 +103,8 @@ public:
   // Fetch historical OHLCV bars for a symbol
   // startDate/endDate format: "YYYY-MM-DD"
   bool FetchHistoricalData(const char *symbol, const char *startDate,
-                           const char *endDate, std::vector<DseBar> &outBars);
+                           const char *endDate, std::vector<DseBar> &outBars,
+                           std::function<void()> onProgress = nullptr);
 
   // Get cached historical bars for a symbol
   // Get cached historical bars for a symbol
@@ -145,9 +147,21 @@ private:
   // Perform HTTP GET and return response body as string
   bool HttpGet(const char *url, std::string &outBody);
 
+  // Perform HTTP POST (form-data) and return response body as string
+  bool HttpPost(const char *url, const char *payload, std::string &outBody);
+
   // Build full URL with query parameters
   std::string BuildHistoryUrl(const char *symbol, const char *startDate,
                               const char *endDate);
+
+  // Amarstock index scraper methods
+  bool IsAmarstockIndex(const char *symbol);
+  bool FetchAmarstockIndexData(const char *symbol, const char *startDate,
+                               const char *endDate,
+                               std::vector<DseBar> &outBars,
+                               std::function<void()> onProgress);
+  bool ParseAmarstockCsv(const std::string &csv, const char *targetSymbol,
+                         std::vector<DseBar> &outBars);
 
   // ─── Parsing Layer ─────────────────────────────────────
 

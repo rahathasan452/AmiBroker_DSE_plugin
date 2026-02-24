@@ -1,4 +1,4 @@
-# Build directories and files
+# Build directories and binaries
 build/
 *.obj
 *.lib
@@ -6,15 +6,43 @@ build/
 *.exe
 *.exp
 *.pdb
-*.ilk
 *.log
+*.ilk
 *.tlog
 *.suo
 *.idb
+*.manifest
+*.resource
+*.res
+*.aps
+*.ncb
+*.opt
+*.plg
 
-# Temporary directories
+# Test and temporary files
 temp/
+*.tmp
+*.cache
 
 # IDE directories
 .vs/
 .vscode/
+*.user
+*.sdf
+*.ipch
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+.venv/
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
