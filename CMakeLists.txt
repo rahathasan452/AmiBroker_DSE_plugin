@@ -38,12 +38,16 @@ set(PLUGIN_SOURCES
     src/Plugin.cpp
     src/DseDataEngine.cpp
     src/RealtimeFeed.cpp
+    src/HtmlUtils.cpp
+    src/CsvUtils.cpp
 )
 
 set(PLUGIN_HEADERS
     include/Plugin.h
     include/DseDataEngine.h
     include/RealtimeFeed.h
+    include/HtmlUtils.h
+    include/CsvUtils.h
 )
 
 # ───────────────────────────────────────────────────────

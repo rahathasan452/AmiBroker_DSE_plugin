@@ -23,7 +23,7 @@ echo [INFO] -------------------------------------------------------------
 if not exist "build\Release\x86" mkdir "build\Release\x86"
 
 REM Use cmd /c to run in isolated environment so variables don't persist
-cmd /c "call "%VC_VARS%" x86 >nul && cl /nologo /LD /MT /O2 /W3 /EHsc /DNDEBUG /D_USRDLL /I.\include src\Plugin.cpp src\DseDataEngine.cpp src\RealtimeFeed.cpp /Fe:build\Release\x86\DSE_DataPlugin_x86.dll /link /DEF:Plugin.def user32.lib kernel32.lib wininet.lib ws2_32.lib comctl32.lib shell32.lib ole32.lib"
+cmd /c "call "%VC_VARS%" x86 >nul && cl /nologo /LD /MT /O2 /W3 /EHsc /DNDEBUG /D_USRDLL /I.\include src\Plugin.cpp src\DseDataEngine.cpp src\RealtimeFeed.cpp src\HtmlUtils.cpp src\CsvUtils.cpp /Fe:build\Release\x86\DSE_DataPlugin_x86.dll /link /DEF:Plugin.def user32.lib kernel32.lib wininet.lib ws2_32.lib comctl32.lib shell32.lib ole32.lib"
 
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] x86 Build FAILED!
@@ -43,7 +43,7 @@ echo [INFO] -------------------------------------------------------------
 if not exist "build\Release\x64" mkdir "build\Release\x64"
 
 REM Use cmd /c to run in isolated environment
-cmd /c "call "%VC_VARS%" x64 >nul && cl /nologo /LD /MT /O2 /W3 /EHsc /DNDEBUG /D_USRDLL /I.\include src\Plugin.cpp src\DseDataEngine.cpp src\RealtimeFeed.cpp /Fe:build\Release\x64\DSE_DataPlugin_x64.dll /link /DEF:Plugin.def user32.lib kernel32.lib wininet.lib ws2_32.lib comctl32.lib shell32.lib ole32.lib"
+cmd /c "call "%VC_VARS%" x64 >nul && cl /nologo /LD /MT /O2 /W3 /EHsc /DNDEBUG /D_USRDLL /I.\include src\Plugin.cpp src\DseDataEngine.cpp src\RealtimeFeed.cpp src\HtmlUtils.cpp src\CsvUtils.cpp /Fe:build\Release\x64\DSE_DataPlugin_x64.dll /link /DEF:Plugin.def user32.lib kernel32.lib wininet.lib ws2_32.lib comctl32.lib shell32.lib ole32.lib"
 
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] x64 Build FAILED!

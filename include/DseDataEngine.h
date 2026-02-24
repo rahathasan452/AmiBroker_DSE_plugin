@@ -14,6 +14,7 @@
 #ifndef DSE_DATA_ENGINE_H
 #define DSE_DATA_ENGINE_H
 
+#include "DseTypes.h"
 #include <functional>
 #include <map>
 #include <mutex>
@@ -21,68 +22,6 @@
 #include <vector>
 #include <windows.h>
 #include <wininet.h>
-
-///////////////////////////////////////////////////////////////////////////
-// Data structures for parsed DSE data
-///////////////////////////////////////////////////////////////////////////
-
-// A single OHLCV bar parsed from DSE
-struct DseBar {
-  int year, month, day;
-  double open, high, low, close;
-  double volume;
-  double trade; // number of trades
-  double value; // turnover value
-  bool valid;   // false if bad tick
-};
-
-// Real-time quote for a single instrument
-struct DseQuote {
-  char symbol[32];
-  double ltp; // Last Traded Price
-  double high;
-  double low;
-  double open;
-  double close; // previous close / closing price
-  double ycp;   // yesterday's closing price
-  double change;
-  double changePercent;
-  double volume;
-  double trade;
-  double value;
-  bool valid;
-};
-
-// Configuration loaded from INI
-struct DseConfig {
-  int historyDays;
-  int pollIntervalMs;
-  int marketOpenHour, marketOpenMinute;
-  int marketCloseHour, marketCloseMinute;
-  int maxReconnectAttempts;
-  int httpTimeoutSec;
-  char userAgent[256];
-  bool preferWebData; // New: Priority for Web vs Local data
-  char latestPriceUrl[512];
-  char dayEndArchiveUrl[512];
-  char altLatestPriceUrl[512];
-  bool enableLogging;
-  char logFilePath[260];
-  char csvSeedPath[512]; // Folder with per-symbol CSV seed files (1999–present)
-  char exportPath[MAX_PATH]; // New: CSV Export Path
-  int exportIntervalSec;     // New: Auto-export interval (0=disabled)
-};
-
-///////////////////////////////////////////////////////////////////////////
-// Connection state
-///////////////////////////////////////////////////////////////////////////
-enum ConnectionState {
-  CONN_DISCONNECTED = 0,
-  CONN_CONNECTING = 1,
-  CONN_CONNECTED = 2,
-  CONN_RECONNECTING = 3,
-  CONN_ERROR = 4
-};
 
 ///////////////////////////////////////////////////////////////////////////
 // DseDataEngine — Main data retrieval and parsing class
@@ -107,11 +46,12 @@ public:
                            std::function<void()> onProgress = nullptr);
 
   // Get cached historical bars for a symbol
-  // Get cached historical bars for a symbol
   bool GetCachedBars(const char *symbol, std::vector<DseBar> &outBars);
 
-  // Export
+  // Export all cached data to CSV
   void ExportAllDataToCsv();
+
+  // Check and trigger auto-export if interval elapsed
   void CheckAutoExport();
 
   // ─── Real-Time Data ────────────────────────────────────
@@ -199,13 +139,13 @@ private:
   // Load configuration from INI file
   bool LoadConfig(const char *path);
 
-  // Load historical bars from a CSV seed file (Trading_Code,Date,O,H,L,C,V)
+  // Load historical bars from a CSV seed file
   bool LoadCsvSeed(const char *symbol, std::vector<DseBar> &outBars);
 
   // ─── Members ───────────────────────────────────────────
 
-  HINTERNET m_hInternet; // WinInet session
-  HINTERNET m_hConnect;  // WinInet connection
+  HINTERNET m_hInternet;        // WinInet session
+  HINTERNET m_hConnect;         // WinInet connection
   DseConfig m_config;
   ConnectionState m_connState;
 

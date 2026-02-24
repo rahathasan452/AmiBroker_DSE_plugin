@@ -31,6 +31,14 @@ temp/
 *.sdf
 *.ipch
 
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.vcxproj*
+*.sln
+
 # Python
 __pycache__/
 *.pyc
@@ -39,10 +47,12 @@ __pycache__/
 .venv/
 
 # Logs
-*.log
 logs/
 
 # OS files
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Exported data (user-generated)
+export/
