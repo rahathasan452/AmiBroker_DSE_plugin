@@ -897,35 +897,71 @@ PLUGINAPI int GetQuotesEx(const char *pszTicker, int nPeriodicity,
                  pszTicker);
   }
 
-  // Fill the Quotation array
-  // AmiBroker expects data from oldest (index 0) to newest (index N)
+  // ------------------------------------------------------------------------
+  // MERGE LOGIC: Combine AmiBroker's existing local data with Plugin's web data
+  // ------------------------------------------------------------------------
+  std::map<unsigned __int64, Quotation> mergedQuotes;
 
-  // Filter valid bars
+  // 1. Read existing AmiBroker data into the map (if any)
+  if (nLastValid >= 0) {
+    for (int i = 0; i <= nLastValid; ++i) {
+      // Pack the date components into a single 64-bit int for map sorting
+      unsigned __int64 key = pQuotes[i].DateTime.Date;
+      mergedQuotes[key] = pQuotes[i];
+    }
+  }
+
+  // 2. Filter valid bars from plugin cache
   std::vector<DseBar> validBars;
   for (const auto &b : bars) {
     if (b.valid)
       validBars.push_back(b);
   }
 
-  int count = (int)validBars.size();
+  // 3. Merge plugin data into the map
+  // Note: DseDataEngine already applies `preferWebData` internally for merging
+  // seed+web. Here, we generally let the plugin's cached data overwrite
+  // AmiBroker's local data for the overlapping dates because the plugin just
+  // refreshed it.
+  for (const auto &bar : validBars) {
+    AmiDate ad = PackAmiDate(bar.year, bar.month, bar.day, 0, 0, 0);
+    unsigned __int64 key = ad.Date;
+
+    Quotation q;
+    memset(&q, 0, sizeof(q));
+    q.DateTime = ad;
+    q.Open = (float)bar.open;
+    q.High = (float)bar.high;
+    q.Low = (float)bar.low;
+    q.Price = (float)bar.close;
+    q.Volume = (float)bar.volume;
+    q.OpenInterest = 0;
+    q.AuxData1 = (float)bar.trade;
+    q.AuxData2 = (float)bar.value;
+
+    mergedQuotes[key] = q;
+  }
+
+  // 4. Fill the Quotation array with the merged data
+  // AmiBroker expects data from oldest (index 0) to newest (index N)
+  int count = (int)mergedQuotes.size();
   if (count > nSize)
     count = nSize;
 
-  // Start index: if we have more data than array size, skip oldest
-  int startIdx = (int)validBars.size() - count;
+  // If we have more data than array size, skip oldest
+  int skipCount = (int)mergedQuotes.size() - count;
+  int i = 0;
+  int skipped = 0;
 
-  for (int i = 0; i < count; ++i) {
-    const DseBar &bar = validBars[startIdx + i];
-
-    pQuotes[i].DateTime = PackAmiDate(bar.year, bar.month, bar.day, 0, 0, 0);
-    pQuotes[i].Open = (float)bar.open;
-    pQuotes[i].High = (float)bar.high;
-    pQuotes[i].Low = (float)bar.low;
-    pQuotes[i].Price = (float)bar.close;
-    pQuotes[i].Volume = (float)bar.volume;
-    pQuotes[i].OpenInterest = 0;
-    pQuotes[i].AuxData1 = (float)bar.trade; // Store trades in Aux1
-    pQuotes[i].AuxData2 = (float)bar.value; // Store value in Aux2
+  for (const auto &entry : mergedQuotes) {
+    if (skipped < skipCount) {
+      skipped++;
+      continue;
+    }
+    pQuotes[i] = entry.second;
+    i++;
+    if (i >= count)
+      break;
   }
 
   // If we have a real-time quote, update the last bar
