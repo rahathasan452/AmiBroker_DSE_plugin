@@ -1,14 +1,8 @@
-///////////////////////////////////////////////////////////////////////////
-// Plugin.cpp — Main Plugin Implementation
+// Plugin.cpp — AmiBroker Data Plugin Entry Points
 //
-// [Explanation for non-developers]:
-// This file is the main "bridge" between AmiBroker (the trading software) and
-// our custom data downloader. It handles starting up the plugin, showing the
-// settings window when you click "Configure", and passing the downloaded stock
-// charts and live prices directly into AmiBroker's charts.
-//
-// Handles AmiBroker interaction, configuration dialog, and data delivery.
-///////////////////////////////////////////////////////////////////////////
+// Implements all exported AmiBroker plugin functions: Init, Release, Configure,
+// GetQuotesEx, GetRecentInfo, Notify, and SetTimeBase. Owns the global
+// DseDataEngine and RealtimeFeed singletons.
 
 #include "Plugin.h"
 #include "DseDataEngine.h"
@@ -27,8 +21,8 @@ PluginInfo g_pluginInfo = {0};
 DseDataEngine g_engine;
 RealtimeFeed g_feed;
 
-char g_configPath[MAX_PATH] = {0};
-char g_dbPath[MAX_PATH] = {0};
+char g_configPath[MAX_PATH] = {0}; // path to dse_config.ini
+char g_dbPath[MAX_PATH] = {0};     // AmiBroker database path
 char g_currentSymbol[64] = {0};
 HWND g_hAmiBrokerWnd = NULL;
 bool g_initialized = false;
@@ -121,16 +115,9 @@ static std::string DateToday() {
   return std::string(buf);
 }
 
-///////////////////////////////////////////////////////////////////////////
-// Helper: Trigger lazy backfill for a symbol
-//
-// [Explanation for non-developers]:
-// When you open a chart for a new stock (like GP or BRACBANK), we might not
-// have its historical data yet. Instead of freezing your AmiBroker screen while
-// it downloads 3 years of data, this function downloads the missing data
-// invisibly in the background. Once it finishes downloading, it tells the chart
-// to refresh.
-///////////////////////////////////////////////////////////////////////////
+// LazyBackfill — fetch historical data for symbol in the background.
+// If cached data exists, fetches only the delta from the last bar to today.
+// Otherwise runs a full backfill for the configured historyDays window.
 
 static void LazyBackfill(const char *symbol) {
   if (!symbol || !symbol[0])
@@ -353,14 +340,8 @@ void UnpackAmiDate(AmiDate d, int *year, int *month, int *day, int *hour,
     *second = d.PackDate.Second;
 }
 
-///////////////////////////////////////////////////////////////////////////
-// Init — Initialize the plugin
-//
-// [Explanation for non-developers]:
-// This block runs when AmiBroker starts up and loads our plugin. It finds your
-// saved settings (like your poll interval) and starts the "data engine" which
-// is responsible for pulling data from the internet.
-///////////////////////////////////////////////////////////////////////////
+// Init — called by AmiBroker once on plugin load.
+// Loads config, initialises the data engine, and starts the real-time feed.
 
 extern "C" __declspec(dllexport) int Init(void) {
   if (g_initialized)
@@ -414,15 +395,8 @@ extern "C" __declspec(dllexport) int Release(void) {
   return 1;
 }
 
-///////////////////////////////////////////////////////////////////////////
-// Configure — Show settings dialog
-//
-// [Explanation for non-developers]:
-// This block populates the pop-up window you see when you click "Configure" in
-// AmiBroker. It builds all the text boxes, buttons, and checkboxes for you to
-// customize how many years of history to download, how fast to poll for live
-// prices, and where to save backup files.
-///////////////////////////////////////////////////////////////////////////
+// Configure — called by AmiBroker when the user clicks "Configure".
+// Builds a programmatic dialog for editing plugin settings.
 
 // Dialog resource IDs (using programmatic dialog creation)
 #define ID_STATIC_YEARS 1001
@@ -835,15 +809,9 @@ PLUGINAPI int Configure(LPCTSTR pszPath, struct InfoSite *pSite) {
   return 1;
 }
 
-///////////////////////////////////////////////////////////////////////////
-// GetQuotesEx — Deliver OHLCV data to AmiBroker
-//
-// [Explanation for non-developers]:
-// This is arguably the most important function. AmiBroker constantly asks this
-// function: "Hey, give me the bar data (Open, High, Low, Close, Volume) for
-// this stock." This function looks at the data we've saved locally and hands it
-// over to AmiBroker so it can draw the candlestick chart.
-///////////////////////////////////////////////////////////////////////////
+// GetQuotesEx — deliver OHLCV bar array to AmiBroker.
+// Merges cached data with any live real-time quote, triggers a background
+// backfill if no cached data exists for this symbol.
 
 PLUGINAPI int GetQuotesEx(const char *pszTicker, int nPeriodicity,
                           int nLastValid, int nSize, struct Quotation *pQuotes,

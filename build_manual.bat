@@ -53,6 +53,17 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo.
+echo [INFO] -------------------------------------------------------------
+echo [INFO] Cleaning up intermediate files...
+echo [INFO] -------------------------------------------------------------
+del /Q *.obj 2>nul
+del /Q build\Release\x86\*.exp 2>nul
+del /Q build\Release\x86\*.lib 2>nul
+del /Q build\Release\x64\*.exp 2>nul
+del /Q build\Release\x64\*.lib 2>nul
+echo [SUCCESS] Cleanup complete.
+
+echo.
 echo [INFO] Build process finished.
 echo If you have 32-bit AmiBroker, use: build\Release\x86\DSE_DataPlugin_x86.dll
 echo If you have 64-bit AmiBroker, use: build\Release\x64\DSE_DataPlugin_x64.dll

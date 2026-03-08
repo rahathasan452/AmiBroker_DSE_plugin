@@ -1,4 +1,4 @@
-# Build directories and binaries
+# Build output
 build/
 *.obj
 *.lib
@@ -6,32 +6,36 @@ build/
 *.exe
 *.exp
 *.pdb
-*.log
 *.ilk
 *.tlog
-*.suo
-*.idb
 *.manifest
-*.resource
 *.res
-*.aps
-*.ncb
-*.opt
-*.plg
+*.idb
 
-# Test and temporary files
+# Logs (generated at runtime)
+*.log
+logs/
+
+# Temporary and legacy scratch files
 temp/
 *.tmp
 *.cache
 
-# IDE directories
+# Old ADK (Borland/Delphi SDK — not part of the build)
+ADK/
+
+# IDE
 .vs/
 .vscode/
+.cursor/
 *.user
 *.sdf
 *.ipch
+*.suo
+*.ncb
+*.opt
 
-# CMake
+# CMake generated
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
@@ -46,13 +50,10 @@ __pycache__/
 .env
 .venv/
 
-# Logs
-logs/
-
-# OS files
+# OS
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Exported data (user-generated)
+# Exported user data
 export/
