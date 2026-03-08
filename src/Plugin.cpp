@@ -14,6 +14,8 @@
 #include "DseDataEngine.h"
 #include "RealtimeFeed.h"
 #include <commctrl.h>
+#include <mutex>
+#include <set>
 #include <shlobj.h>
 #include <stdio.h>
 #include <string>
@@ -379,6 +381,17 @@ extern "C" __declspec(dllexport) int Init(void) {
   g_engine.Log("Plugin::Init - FORCING DEBUG LOGGING ON");
 
   g_initialized = true;
+
+  // Start the real-time polling feed if the AB window handle is already known
+  // (it may not be at this point — Notify(REASON_DATABASE_LOADED) will also
+  // attempt to start it when the handle becomes available).
+  if (g_hAmiBrokerWnd && IsWindow(g_hAmiBrokerWnd)) {
+    if (!g_feed.IsRunning()) {
+      g_engine.Log("Plugin::Init — starting realtime feed");
+      g_feed.Start(g_hAmiBrokerWnd, &g_engine);
+    }
+  }
+
   g_engine.Log("Plugin::Init — complete");
 
   return 1; // Success
@@ -869,21 +882,26 @@ PLUGINAPI int GetQuotesEx(const char *pszTicker, int nPeriodicity,
   // bar)
   if (validCacheCount == 0) {
     g_engine.Log("DEBUG: GetQuotesEx - No cached data for %s!", pszTicker);
-    // No cached data — trigger backfill in background
-    static char lastTreq[64] = {0};
-    if (_stricmp(lastTreq, pszTicker) != 0) {
-      strncpy_s(lastTreq, pszTicker, sizeof(lastTreq) - 1);
-
-      g_engine.Log("GetQuotesEx: triggering background backfill for %s",
-                   pszTicker);
-
-      BackfillParams *p = new BackfillParams;
-      strncpy_s(p->symbol, pszTicker, sizeof(p->symbol) - 1);
-      g_engine.Log("DEBUG: GetQuotesEx: Creating thread for %s", pszTicker);
-      CreateThread(NULL, 0, BackfillThreadProc, p, 0, NULL);
-    } else {
-      g_engine.Log("DEBUG: GetQuotesEx - Backfill already running for %s",
-                   pszTicker);
+    // No cached data — trigger backfill in background.
+    // Use a set so every unique symbol gets exactly one backfill thread,
+    // not just the first symbol ever seen (the old static-char bug).
+    static std::set<std::string> s_enqueuedBackfills;
+    static std::mutex s_backfillMutex;
+    {
+      std::lock_guard<std::mutex> lock(s_backfillMutex);
+      std::string sym(pszTicker);
+      if (s_enqueuedBackfills.find(sym) == s_enqueuedBackfills.end()) {
+        s_enqueuedBackfills.insert(sym);
+        g_engine.Log("GetQuotesEx: triggering background backfill for %s",
+                     pszTicker);
+        BackfillParams *p = new BackfillParams;
+        strncpy_s(p->symbol, pszTicker, sizeof(p->symbol) - 1);
+        g_engine.Log("DEBUG: GetQuotesEx: Creating thread for %s", pszTicker);
+        CreateThread(NULL, 0, BackfillThreadProc, p, 0, NULL);
+      } else {
+        g_engine.Log("DEBUG: GetQuotesEx - Backfill already enqueued for %s",
+                     pszTicker);
+      }
     }
     return (nLastValid < 0) ? 0 : nLastValid + 1;
   }
@@ -1138,6 +1156,15 @@ PLUGINAPI int Notify(struct PluginNotification *pNotification) {
     // Initialize the data engine if not already
     if (!g_initialized) {
       Init();
+    }
+
+    // Start real-time feed now that we have the AB window handle.
+    // This is the primary start point because hMainWnd is guaranteed here.
+    if (g_hAmiBrokerWnd && IsWindow(g_hAmiBrokerWnd)) {
+      if (!g_feed.IsRunning()) {
+        g_engine.Log("Notify: starting realtime feed (database loaded)");
+        g_feed.Start(g_hAmiBrokerWnd, &g_engine);
+      }
     }
     break;
 
