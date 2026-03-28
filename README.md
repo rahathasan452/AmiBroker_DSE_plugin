@@ -86,3 +86,11 @@ GP,2024-01-02,360.00,365.50,358.00,363.20,1234567
 Date,Open,High,Low,Close,Volume
 2024-01-02,360.00,365.50,358.00,363.20,1234567
 ```
+
+### Import ASCII Configuration
+
+To make the format appear in AmiBroker's Import ASCII drop-down box, open the `import.types` file located in the AmiBroker `Formats` directory and add the following line:
+
+```text
+DSE CSV (*.csv)|*.csv|dse.format
+```
