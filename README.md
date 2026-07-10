@@ -24,20 +24,19 @@ A native C++ data plugin for [AmiBroker](https://www.amibroker.com/) that fetche
 
 2. **Copy the DLL** to AmiBroker's `Plugins` folder
 
-3. **Copy the config file** alongside the DLL:
-   - `config\dse_config.ini`
+3. **Open AmiBroker** → `File` → `Database Settings`
 
-4. **Open AmiBroker** → `File` → `Database Settings`
+4. Under **Data Source**, select `DSE Data Plugin`
 
-5. Under **Data Source**, select `DSE Data Plugin`
+5. Click any DSE symbol to trigger an automatic data fetch.
 
-6. Click **Configure** to open the settings dialog and customize your preferences.
-
-7. Click any DSE symbol to trigger an automatic data fetch.
+**That's it!** The plugin works with built-in defaults. Configuration is optional.
 
 ---
 
-## ⚙️ Configuration (`config/dse_config.ini`)
+## ⚙️ Configuration (Optional)
+
+To customize behavior, download `dse_config.ini` from [GitHub Releases](https://github.com/rahathasan452/AmiBroker_DSE_plugin/releases) and place it alongside the DLL in the `Plugins` folder:
 
 | Section | Key | Default | Description |
 |---|---|---|---|
