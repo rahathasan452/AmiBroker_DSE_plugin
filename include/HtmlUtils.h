@@ -24,6 +24,9 @@ namespace HtmlUtils {
   /// Strip all HTML tags from a string
   std::string StripHtml(const std::string &input);
 
+  /// Decode common HTML entities (&amp;, &nbsp;, &quot;, &#39;, &apos;, &lt;, &gt;)
+  std::string DecodeHtmlEntities(const std::string &input);
+
   /// Trim whitespace from both ends of a string
   std::string Trim(const std::string &s);
 

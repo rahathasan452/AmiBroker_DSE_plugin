@@ -72,6 +72,9 @@ public:
   // Returns true if now falls within configured market hours (Sun–Thu).
   bool IsMarketOpen() const;
 
+  // Returns true if the symbol is one of the 4 Amarstock indices (e.g. 00DSEX or DSEX).
+  static bool IsAmarstockIndex(const char *symbol);
+
   // Append a timestamped log line (no-op when logging is disabled).
   void Log(const char *fmt, ...);
 
@@ -97,8 +100,6 @@ private:
 
   // ── Amarstock Indices ────────────────────────────────────────────────────
 
-  bool IsAmarstockIndex(const char *symbol);
-
   // Fetch index bars day-by-day from amarstock.com/data/download/CSV.
   bool FetchAmarstockIndexData(const char *symbol, const char *startDate,
                                const char *endDate,
@@ -112,7 +113,6 @@ private:
   // ── Members ──────────────────────────────────────────────────────────────
 
   HINTERNET m_hInternet;
-  HINTERNET m_hConnect;
   DseConfig m_config;
   ConnectionState m_connState;
 
@@ -120,6 +120,7 @@ private:
   std::map<std::string, std::vector<DseBar>> m_cache;
 
   mutable std::mutex m_mutex;
+  mutable std::mutex m_logMutex;
 
   FILE *m_logFile;
   time_t m_lastExportTime;

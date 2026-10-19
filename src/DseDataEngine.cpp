@@ -36,8 +36,8 @@ static bool ValidateBar(const DseBar &bar) {
 // ---------------------------------------------------------------------------
 
 DseDataEngine::DseDataEngine()
-    : m_hInternet(NULL), m_hConnect(NULL), m_connState(CONN_DISCONNECTED),
-      m_logFile(NULL) {
+    : m_hInternet(NULL), m_connState(CONN_DISCONNECTED),
+      m_logFile(NULL), m_lastExportTime(0) {
   memset(&m_config, 0, sizeof(m_config));
 }
 
@@ -59,26 +59,34 @@ bool DseDataEngine::Initialize(const char *configPath) {
     m_config.marketCloseHour = 14;
     m_config.marketCloseMinute = 30;
     m_config.maxReconnectAttempts = 10;
-    m_config.httpTimeoutSec = 30;
+    m_config.httpTimeoutSec = 15;
     strcpy_s(m_config.userAgent,
              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
     strcpy_s(m_config.latestPriceUrl,
-             "https://www.dsebd.org/latest_share_price_scroll_l.php");
+             "https://old.dsebd.org/latest_share_price_scroll_l.php");
     strcpy_s(m_config.dayEndArchiveUrl,
-             "https://www.dsebd.org/day_end_archive.php");
+             "https://old.dsebd.org/day_end_archive.php");
     strcpy_s(m_config.altLatestPriceUrl,
-             "https://www.dsebd.org/latest_share_price_all_,ajax.php");
+             "https://old.dsebd.org/latest_share_price_all_,ajax.php");
     m_config.enableLogging = true;
   }
 
-  // Force logging on for this debug build
-  m_config.enableLogging = true;
+  // Open log file if enabled and path configured
+  if (m_logFile) {
+    fclose(m_logFile);
+    m_logFile = NULL;
+  }
 
   if (m_config.enableLogging && m_config.logFilePath[0])
     fopen_s(&m_logFile, m_config.logFilePath, "a");
 
   m_lastExportTime = time(NULL);
   Log("DseDataEngine::Initialize — starting");
+
+  if (m_hInternet) {
+    InternetCloseHandle(m_hInternet);
+    m_hInternet = NULL;
+  }
 
   m_hInternet = InternetOpenA(m_config.userAgent, INTERNET_OPEN_TYPE_PRECONFIG,
                               NULL, NULL, 0);
@@ -88,7 +96,7 @@ bool DseDataEngine::Initialize(const char *configPath) {
     return false;
   }
 
-  DWORD timeout = m_config.httpTimeoutSec * 1000;
+  DWORD timeout = (m_config.httpTimeoutSec > 0 ? m_config.httpTimeoutSec : 15) * 1000;
   InternetSetOptionA(m_hInternet, INTERNET_OPTION_CONNECT_TIMEOUT, &timeout,
                      sizeof(timeout));
   InternetSetOptionA(m_hInternet, INTERNET_OPTION_RECEIVE_TIMEOUT, &timeout,
@@ -105,10 +113,6 @@ void DseDataEngine::Shutdown() {
   std::lock_guard<std::mutex> lock(m_mutex);
   Log("DseDataEngine::Shutdown");
 
-  if (m_hConnect) {
-    InternetCloseHandle(m_hConnect);
-    m_hConnect = NULL;
-  }
   if (m_hInternet) {
     InternetCloseHandle(m_hInternet);
     m_hInternet = NULL;
@@ -157,17 +161,36 @@ bool DseDataEngine::LoadConfig(const char *path) {
 
   GetPrivateProfileStringA(
       "Endpoints", "LatestPrice",
-      "https://www.dsebd.org/latest_share_price_scroll_l.php",
+      "https://old.dsebd.org/latest_share_price_scroll_l.php",
       m_config.latestPriceUrl, sizeof(m_config.latestPriceUrl), path);
 
   GetPrivateProfileStringA(
-      "Endpoints", "DayEndArchive", "https://www.dsebd.org/day_end_archive.php",
+      "Endpoints", "DayEndArchive", "https://old.dsebd.org/day_end_archive.php",
       m_config.dayEndArchiveUrl, sizeof(m_config.dayEndArchiveUrl), path);
 
   GetPrivateProfileStringA(
       "Endpoints", "AltLatestPrice",
-      "https://www.dsebd.org/latest_share_price_all_,ajax.php",
+      "https://old.dsebd.org/latest_share_price_all_,ajax.php",
       m_config.altLatestPriceUrl, sizeof(m_config.altLatestPriceUrl), path);
+
+  // Automatically migrate retired www.dsebd.org endpoints to old.dsebd.org
+  auto sanitizeUrl = [](char *url, size_t maxLen) {
+    std::string s(url);
+    size_t pos = s.find("www.dsebd.org");
+    if (pos != std::string::npos) {
+      s.replace(pos, 13, "old.dsebd.org");
+    } else {
+      pos = s.find("://dsebd.org");
+      if (pos != std::string::npos) {
+        s.replace(pos, 12, "://old.dsebd.org");
+      }
+    }
+    strncpy_s(url, maxLen, s.c_str(), maxLen - 1);
+  };
+
+  sanitizeUrl(m_config.latestPriceUrl, sizeof(m_config.latestPriceUrl));
+  sanitizeUrl(m_config.dayEndArchiveUrl, sizeof(m_config.dayEndArchiveUrl));
+  sanitizeUrl(m_config.altLatestPriceUrl, sizeof(m_config.altLatestPriceUrl));
 
   m_config.enableLogging =
       (GetPrivateProfileIntA("Debug", "EnableLogging", 0, path) != 0);
@@ -177,7 +200,7 @@ bool DseDataEngine::LoadConfig(const char *path) {
                            path);
 
   GetPrivateProfileStringA("DataSource", "CsvSeedPath",
-                           "d:\\software\\dse_2000-2025\\separated_data",
+                           "",
                            m_config.csvSeedPath, sizeof(m_config.csvSeedPath),
                            path);
 
@@ -202,23 +225,46 @@ bool DseDataEngine::HttpGet(const char *url, std::string &outBody) {
 
   Log("HttpGet: %s", url);
 
-  // Try HTTPS first, fall back to plain HTTP on failure
-  HINTERNET hUrl =
-      InternetOpenUrlA(m_hInternet, url, NULL, 0,
-                       INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE |
-                           INTERNET_FLAG_PRAGMA_NOCACHE | INTERNET_FLAG_SECURE,
-                       0);
+  // Try HTTPS first with standard flags
+  DWORD flags = INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE |
+                INTERNET_FLAG_PRAGMA_NOCACHE;
+  if (strncmp(url, "https://", 8) == 0) {
+    flags |= INTERNET_FLAG_SECURE;
+  }
+
+  HINTERNET hUrl = InternetOpenUrlA(m_hInternet, url, NULL, 0, flags, 0);
+
+  if (!hUrl && (flags & INTERNET_FLAG_SECURE)) {
+    DWORD err = GetLastError();
+    Log("WARNING: HttpGet secure request failed (err=%lu), retrying with ignore cert flags", err);
+
+    // Set ignore SSL certificate flags and retry
+    DWORD secFlags = SECURITY_FLAG_IGNORE_UNKNOWN_CA |
+                     SECURITY_FLAG_IGNORE_CERT_DATE_INVALID |
+                     SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
+                     SECURITY_FLAG_IGNORE_REVOCATION;
+    InternetSetOptionA(m_hInternet, INTERNET_OPTION_SECURITY_FLAGS, &secFlags, sizeof(secFlags));
+
+    hUrl = InternetOpenUrlA(m_hInternet, url, NULL, 0,
+                            flags | INTERNET_FLAG_IGNORE_CERT_CN_INVALID |
+                                INTERNET_FLAG_IGNORE_CERT_DATE_INVALID,
+                            0);
+
+    if (!hUrl) {
+      Log("WARNING: HttpGet secure retry failed, trying plain HTTP fallback");
+      std::string httpUrl(url);
+      if (httpUrl.compare(0, 8, "https://") == 0) {
+        httpUrl.replace(0, 8, "http://");
+      }
+      hUrl = InternetOpenUrlA(m_hInternet, httpUrl.c_str(), NULL, 0,
+                              INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE, 0);
+    }
+  }
 
   if (!hUrl) {
-    Log("WARNING: HttpGet HTTPS failed (err=%lu), retrying without SECURE",
-        GetLastError());
-    hUrl = InternetOpenUrlA(m_hInternet, url, NULL, 0,
-                            INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE,
-                            0);
-    if (!hUrl) {
-      m_connState = CONN_ERROR;
-      return false;
-    }
+    Log("ERROR: HttpGet failed completely, error=%lu", GetLastError());
+    m_connState = CONN_ERROR;
+    return false;
   }
 
   outBody.clear();
@@ -265,20 +311,28 @@ bool DseDataEngine::HttpPost(const char *url, const char *payload,
     return false;
   }
 
+  bool isHttps = (urlComp.nScheme == INTERNET_SCHEME_HTTPS);
+  INTERNET_PORT port = (urlComp.nPort != 0)
+                           ? urlComp.nPort
+                           : (isHttps ? INTERNET_DEFAULT_HTTPS_PORT
+                                      : INTERNET_DEFAULT_HTTP_PORT);
+
   HINTERNET hConnect =
-      InternetConnectA(m_hInternet, host, INTERNET_DEFAULT_HTTPS_PORT, NULL,
+      InternetConnectA(m_hInternet, host, port, NULL,
                        NULL, INTERNET_SERVICE_HTTP, 0, 0);
   if (!hConnect) {
     Log("ERROR: InternetConnect failed, error=%lu", GetLastError());
     return false;
   }
 
+  DWORD reqFlags = INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE;
+  if (isHttps)
+    reqFlags |= INTERNET_FLAG_SECURE;
+
   const char *acceptTypes[] = {"*/*", NULL};
   HINTERNET hRequest =
       HttpOpenRequestA(hConnect, "POST", path, NULL, NULL, acceptTypes,
-                       INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE |
-                           INTERNET_FLAG_SECURE,
-                       0);
+                       reqFlags, 0);
   if (!hRequest) {
     Log("ERROR: HttpOpenRequest failed, error=%lu", GetLastError());
     InternetCloseHandle(hConnect);
@@ -289,10 +343,28 @@ bool DseDataEngine::HttpPost(const char *url, const char *payload,
   DWORD headersLen = (DWORD)strlen(headers);
   if (!HttpSendRequestA(hRequest, headers, headersLen, (LPVOID)payload,
                         (DWORD)strlen(payload))) {
-    Log("ERROR: HttpSendRequest failed, error=%lu", GetLastError());
-    InternetCloseHandle(hRequest);
-    InternetCloseHandle(hConnect);
-    return false;
+    DWORD err = GetLastError();
+    Log("WARNING: HttpSendRequest failed, error=%lu, attempting retry with security ignore flags", err);
+
+    if (isHttps) {
+      DWORD secFlags = SECURITY_FLAG_IGNORE_UNKNOWN_CA |
+                       SECURITY_FLAG_IGNORE_CERT_DATE_INVALID |
+                       SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
+                       SECURITY_FLAG_IGNORE_REVOCATION;
+      InternetSetOptionA(hRequest, INTERNET_OPTION_SECURITY_FLAGS, &secFlags, sizeof(secFlags));
+
+      if (!HttpSendRequestA(hRequest, headers, headersLen, (LPVOID)payload,
+                            (DWORD)strlen(payload))) {
+        Log("ERROR: HttpSendRequest retry failed, error=%lu", GetLastError());
+        InternetCloseHandle(hRequest);
+        InternetCloseHandle(hConnect);
+        return false;
+      }
+    } else {
+      InternetCloseHandle(hRequest);
+      InternetCloseHandle(hConnect);
+      return false;
+    }
   }
 
   outBody.clear();
@@ -328,7 +400,9 @@ std::string DseDataEngine::BuildHistoryUrl(const char *symbol,
   // Format:
   // day_end_archive.php?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&inst=SYM&archive=data
   std::string url = m_config.dayEndArchiveUrl;
-  url += "?startDate=";
+  char sep = (url.find('?') == std::string::npos) ? '?' : '&';
+  url += sep;
+  url += "startDate=";
   url += startDate;
   url += "&endDate=";
   url += endDate;
@@ -458,7 +532,8 @@ bool DseDataEngine::ParseLatestPriceHtml(const std::string &html,
                                          std::vector<DseQuote> &outQuotes) {
   // Expected columns: # | TRADING CODE | LTP | HIGH | LOW | CLOSE |
   //                   YCP | CHANGE | TRADE | VALUE(mn) | VOLUME
-  auto rows = HtmlUtils::ExtractTableRows(html);
+  std::string tableHtml = HtmlUtils::ExtractTargetTable(html);
+  auto rows = HtmlUtils::ExtractTableRows(tableHtml);
   if (rows.size() < 2) {
     Log("ParseLatestPriceHtml: too few rows (%zu)", rows.size());
     return false;
@@ -532,6 +607,8 @@ bool DseDataEngine::ParseLatestPriceHtml(const std::string &html,
 
     if (colSymbol < maxCol) {
       std::string sym = HtmlUtils::Trim(cells[colSymbol]);
+      if (sym == "TRADING CODE" || sym == "#" || sym.empty())
+        continue;
       strncpy_s(q.symbol, sym.c_str(), sizeof(q.symbol) - 1);
     }
 
@@ -554,11 +631,20 @@ bool DseDataEngine::ParseLatestPriceHtml(const std::string &html,
     if (colVolume < maxCol)
       q.volume = HtmlUtils::SafeStod(cells[colVolume]);
 
-    if (q.ycp > 0)
-      q.changePercent = ((q.ltp - q.ycp) / q.ycp) * 100.0;
-    q.open = q.ycp; // open defaults to previous close when not provided
+    // Handle symbols with 0 LTP (untraded or suspended today) by falling back to Close or YCP
+    if (q.ltp <= 0) {
+      if (q.close > 0)
+        q.ltp = q.close;
+      else if (q.ycp > 0)
+        q.ltp = q.ycp;
+    }
 
-    if (q.symbol[0] && q.ltp > 0)
+    if (q.ycp > 0 && q.ltp > 0)
+      q.changePercent = ((q.ltp - q.ycp) / q.ycp) * 100.0;
+    q.open = (q.open > 0) ? q.open : q.ycp;
+
+    if (q.symbol[0] && _stricmp(q.symbol, "TRADING CODE") != 0 &&
+        strcmp(q.symbol, "#") != 0)
       outQuotes.push_back(q);
   }
 
@@ -569,6 +655,48 @@ bool DseDataEngine::ParseLatestPriceHtml(const std::string &html,
 // ---------------------------------------------------------------------------
 // Historical Data
 // ---------------------------------------------------------------------------
+
+static std::string ClampStartDateForDseWeb(const char *startDate, const char *endDate) {
+  int sy = 0, sm = 0, sd = 0, ey = 0, em = 0, ed = 0;
+  if (!startDate || !endDate ||
+      sscanf_s(startDate, "%04d-%02d-%02d", &sy, &sm, &sd) != 3 ||
+      sscanf_s(endDate, "%04d-%02d-%02d", &ey, &em, &ed) != 3) {
+    return (startDate ? std::string(startDate) : "");
+  }
+
+  SYSTEMTIME stEnd = {0};
+  stEnd.wYear = (WORD)ey;
+  stEnd.wMonth = (WORD)em;
+  stEnd.wDay = (WORD)ed;
+
+  FILETIME ftEnd;
+  if (!SystemTimeToFileTime(&stEnd, &ftEnd))
+    return std::string(startDate);
+
+  ULARGE_INTEGER ul;
+  ul.LowPart = ftEnd.dwLowDateTime;
+  ul.HighPart = ftEnd.dwHighDateTime;
+
+  // 720 days (~2 years rolling archive limit on DSE server)
+  ULONGLONG maxInterval = 720ULL * 86400ULL * 10000000ULL;
+  if (ul.QuadPart > maxInterval) {
+    ul.QuadPart -= maxInterval;
+    FILETIME ftMin;
+    ftMin.dwLowDateTime = ul.LowPart;
+    ftMin.dwHighDateTime = ul.HighPart;
+    SYSTEMTIME stMin;
+    if (FileTimeToSystemTime(&ftMin, &stMin)) {
+      int minKey = stMin.wYear * 10000 + stMin.wMonth * 100 + stMin.wDay;
+      int startKey = sy * 10000 + sm * 100 + sd;
+      if (startKey < minKey) {
+        char buf[32];
+        sprintf_s(buf, "%04d-%02d-%02d", stMin.wYear, stMin.wMonth, stMin.wDay);
+        return std::string(buf);
+      }
+    }
+  }
+  return std::string(startDate);
+}
 
 bool DseDataEngine::FetchHistoricalData(const char *symbol,
                                         const char *startDate,
@@ -598,8 +726,14 @@ bool DseDataEngine::FetchHistoricalData(const char *symbol,
         symbol);
   }
 
-  // 2. Fetch from web
-  std::string url = BuildHistoryUrl(symbol, startDate, endDate);
+  // 2. Fetch from web (clamping startDate to DSE's ~2-year rolling window to prevent empty "No Day End Data" response)
+  std::string webStartDate = ClampStartDateForDseWeb(startDate, endDate);
+  if (webStartDate != startDate) {
+    Log("FetchHistoricalData: clamped web query startDate from %s to %s (DSE 2-year limit)",
+        startDate, webStartDate.c_str());
+  }
+
+  std::string url = BuildHistoryUrl(symbol, webStartDate.c_str(), endDate);
   std::string html;
   std::vector<DseBar> webBars;
   bool webSuccess = false;
@@ -701,8 +835,7 @@ const std::vector<std::string> &DseDataEngine::GetSymbolList() {
 bool DseDataEngine::RefreshSymbolList() {
   Log("RefreshSymbolList: fetching from DSE");
   std::vector<DseQuote> quotes;
-  if (!FetchLatestQuotes(quotes))
-    return false;
+  bool fetchOk = FetchLatestQuotes(quotes);
 
   std::lock_guard<std::mutex> lock(m_mutex);
   std::vector<std::string> fetched;
@@ -710,17 +843,42 @@ bool DseDataEngine::RefreshSymbolList() {
     if (q.symbol[0])
       fetched.push_back(q.symbol);
 
-  // Amarstock indices are not listed on the DSE live page — inject them
-  // manually
+  // If web fetch failed or returned nothing, check local CSV seed if configured
+  if (fetched.empty() && m_config.csvSeedPath[0]) {
+    char searchPattern[MAX_PATH];
+    sprintf_s(searchPattern, "%s\\*.csv", m_config.csvSeedPath);
+    WIN32_FIND_DATAA fd;
+    HANDLE hFind = FindFirstFileA(searchPattern, &fd);
+    if (hFind != INVALID_HANDLE_VALUE) {
+      do {
+        if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+          std::string name = fd.cFileName;
+          size_t dot = name.rfind('.');
+          if (dot != std::string::npos) {
+            fetched.push_back(name.substr(0, dot));
+          }
+        }
+      } while (FindNextFileA(hFind, &fd));
+      FindClose(hFind);
+      Log("RefreshSymbolList: loaded %zu symbols from CSV seed directory",
+          fetched.size());
+    }
+  }
+
+  // Amarstock indices are always supported — inject them
   fetched.push_back("00DS30");
   fetched.push_back("00DSES");
   fetched.push_back("00DSEX");
   fetched.push_back("00DSMEX");
 
   std::sort(fetched.begin(), fetched.end());
-  m_symbols = fetched;
-  Log("RefreshSymbolList: %zu symbols", m_symbols.size());
-  return true;
+  fetched.erase(std::unique(fetched.begin(), fetched.end()), fetched.end());
+
+  if (!fetched.empty()) {
+    m_symbols = fetched;
+  }
+  Log("RefreshSymbolList: %zu symbols (fetchOk=%d)", m_symbols.size(), fetchOk);
+  return fetchOk || !m_symbols.empty();
 }
 
 // ---------------------------------------------------------------------------
@@ -748,10 +906,12 @@ bool DseDataEngine::IsMarketOpen() const {
 // ---------------------------------------------------------------------------
 
 bool DseDataEngine::IsAmarstockIndex(const char *symbol) {
-  if (!symbol)
+  if (!symbol || !symbol[0])
     return false;
   return (_stricmp(symbol, "00DS30") == 0 || _stricmp(symbol, "00DSES") == 0 ||
-          _stricmp(symbol, "00DSEX") == 0 || _stricmp(symbol, "00DSMEX") == 0);
+          _stricmp(symbol, "00DSEX") == 0 || _stricmp(symbol, "00DSMEX") == 0 ||
+          _stricmp(symbol, "DS30") == 0 || _stricmp(symbol, "DSES") == 0 ||
+          _stricmp(symbol, "DSEX") == 0 || _stricmp(symbol, "DSMEX") == 0);
 }
 
 bool DseDataEngine::FetchAmarstockIndexData(const char *symbol,
@@ -793,6 +953,18 @@ bool DseDataEngine::FetchAmarstockIndexData(const char *symbol,
     auto it = m_cache.find(symbol);
     if (it != m_cache.end())
       outBars = it->second;
+  }
+
+  // Also check local CSV seed for index data if available
+  std::vector<DseBar> seedBars;
+  if (CsvUtils::LoadCsvSeed(symbol, m_config.csvSeedPath, seedBars) ||
+      (strlen(symbol) > 2 && symbol[0] == '0' && symbol[1] == '0' &&
+       CsvUtils::LoadCsvSeed(symbol + 2, m_config.csvSeedPath, seedBars))) {
+    for (const auto &sb : seedBars) {
+      outBars.push_back(sb);
+    }
+    Log("FetchAmarstockIndexData: loaded %zu bars from CSV seed for %s",
+        seedBars.size(), symbol);
   }
 
   int daysFetched = 0, missingDays = 0;
@@ -847,15 +1019,22 @@ bool DseDataEngine::FetchAmarstockIndexData(const char *symbol,
     ftCur.dwHighDateTime = uCur.HighPart;
   }
 
-  // Sort and update cache in one shot
-  std::sort(outBars.begin(), outBars.end(),
-            [](const DseBar &a, const DseBar &b) {
-              if (a.year != b.year)
-                return a.year < b.year;
-              if (a.month != b.month)
-                return a.month < b.month;
-              return a.day < b.day;
-            });
+  // Deduplicate and sort bars chronologically (valid bars supersede placeholders)
+  std::map<int, DseBar> dedup;
+  for (const auto &b : outBars) {
+    int key = b.year * 10000 + b.month * 100 + b.day;
+    auto it = dedup.find(key);
+    if (it == dedup.end() || (!it->second.valid && b.valid)) {
+      dedup[key] = b;
+    }
+  }
+
+  outBars.clear();
+  outBars.reserve(dedup.size());
+  for (const auto &entry : dedup) {
+    outBars.push_back(entry.second);
+  }
+
   {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_cache[symbol] = outBars;
@@ -912,6 +1091,8 @@ void DseDataEngine::ExportAllDataToCsv() {
 void DseDataEngine::Log(const char *fmt, ...) {
   if (!m_config.enableLogging && !m_logFile)
     return;
+
+  std::lock_guard<std::mutex> lock(m_logMutex);
 
   SYSTEMTIME st;
   GetLocalTime(&st);

@@ -9,7 +9,7 @@
 ###########################################################################
 
 cmake_minimum_required(VERSION 3.15)
-project(DSE_DataPlugin VERSION 1.0.0 LANGUAGES CXX)
+project(DSE_DataPlugin VERSION 1.2.0 LANGUAGES CXX)
 
 # ───────────────────────────────────────────────────────
 # Configuration
@@ -78,6 +78,7 @@ target_link_libraries(DSE_DataPlugin PRIVATE
     comctl32    # Common controls for dialog
     shell32     # Shell API for Browse dialog
     ole32       # COM API for TaskMemFree
+    gdi32       # GDI stock font objects
 )
 
 # ───────────────────────────────────────────────────────

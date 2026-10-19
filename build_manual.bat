@@ -1,11 +1,26 @@
 @echo off
 setlocal enabledelayedexpansion
 
-REM --- 1. Find Visual Studio (Hardcoded based on successful detection) ---
-set "VC_VARS=D:\software\Visual studio\Insiders\VC\Auxiliary\Build\vcvarsall.bat"
+REM --- 1. Find Visual Studio dynamically ---
+set "VC_VARS="
 
-if not exist "%VC_VARS%" (
-    echo [ERROR] vcvarsall.bat not found at: %VC_VARS%
+REM Try vswhere first
+if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" (
+    for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath`) do (
+        if exist "%%i\VC\Auxiliary\Build\vcvarsall.bat" set "VC_VARS=%%i\VC\Auxiliary\Build\vcvarsall.bat"
+    )
+)
+
+REM Fallback checks
+if not defined VC_VARS if exist "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" set "VC_VARS=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat"
+if not defined VC_VARS if exist "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" set "VC_VARS=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat"
+if not defined VC_VARS if exist "C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvarsall.bat" set "VC_VARS=C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvarsall.bat"
+if not defined VC_VARS if exist "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" set "VC_VARS=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat"
+if not defined VC_VARS if exist "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" set "VC_VARS=C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvarsall.bat"
+if not defined VC_VARS if exist "D:\software\Visual studio\Insiders\VC\Auxiliary\Build\vcvarsall.bat" set "VC_VARS=D:\software\Visual studio\Insiders\VC\Auxiliary\Build\vcvarsall.bat"
+
+if not defined VC_VARS (
+    echo [ERROR] vcvarsall.bat could not be found automatically.
     pause
     exit /b 1
 )
@@ -23,8 +38,8 @@ echo [INFO] -------------------------------------------------------------
 if not exist "build\Release\x86" mkdir "build\Release\x86"
 
 REM Use cmd /c to run in isolated environment so variables don't persist
-cmd /c "call "%VC_VARS%" x86 >nul && cl /nologo /LD /MT /O2 /W3 /EHsc /DNDEBUG /D_USRDLL /I.\include src\Plugin.cpp src\DseDataEngine.cpp src\RealtimeFeed.cpp src\HtmlUtils.cpp src\CsvUtils.cpp /Fe:build\Release\x86\DSE_DataPlugin_x86.dll /link /DEF:Plugin.def user32.lib kernel32.lib wininet.lib ws2_32.lib comctl32.lib shell32.lib ole32.lib"
-
+cmd /c "call "%VC_VARS%" x86 >nul && cl /nologo /LD /MT /O2 /W3 /EHsc /DNDEBUG /D_USRDLL /I.\include src\Plugin.cpp src\DseDataEngine.cpp src\RealtimeFeed.cpp src\HtmlUtils.cpp src\CsvUtils.cpp /Fe:build\Release\x86\DSE_DataPlugin_x86.dll /link /DEF:Plugin.def user32.lib kernel32.lib gdi32.lib wininet.lib ws2_32.lib comctl32.lib shell32.lib ole32.lib"
+ 
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] x86 Build FAILED!
 ) else (
@@ -43,7 +58,7 @@ echo [INFO] -------------------------------------------------------------
 if not exist "build\Release\x64" mkdir "build\Release\x64"
 
 REM Use cmd /c to run in isolated environment
-cmd /c "call "%VC_VARS%" x64 >nul && cl /nologo /LD /MT /O2 /W3 /EHsc /DNDEBUG /D_USRDLL /I.\include src\Plugin.cpp src\DseDataEngine.cpp src\RealtimeFeed.cpp src\HtmlUtils.cpp src\CsvUtils.cpp /Fe:build\Release\x64\DSE_DataPlugin_x64.dll /link /DEF:Plugin.def user32.lib kernel32.lib wininet.lib ws2_32.lib comctl32.lib shell32.lib ole32.lib"
+cmd /c "call "%VC_VARS%" x64 >nul && cl /nologo /LD /MT /O2 /W3 /EHsc /DNDEBUG /D_USRDLL /I.\include src\Plugin.cpp src\DseDataEngine.cpp src\RealtimeFeed.cpp src\HtmlUtils.cpp src\CsvUtils.cpp /Fe:build\Release\x64\DSE_DataPlugin_x64.dll /link /DEF:Plugin.def user32.lib kernel32.lib gdi32.lib wininet.lib ws2_32.lib comctl32.lib shell32.lib ole32.lib"
 
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] x64 Build FAILED!
@@ -67,4 +82,4 @@ echo.
 echo [INFO] Build process finished.
 echo If you have 32-bit AmiBroker, use: build\Release\x86\DSE_DataPlugin_x86.dll
 echo If you have 64-bit AmiBroker, use: build\Release\x64\DSE_DataPlugin_x64.dll
-pause
+if not "%1"=="--no-pause" pause

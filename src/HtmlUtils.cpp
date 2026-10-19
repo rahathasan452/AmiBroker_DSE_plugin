@@ -8,6 +8,42 @@
 
 namespace HtmlUtils {
 
+std::string DecodeHtmlEntities(const std::string &input) {
+  std::string result;
+  result.reserve(input.size());
+  for (size_t i = 0; i < input.size(); ) {
+    if (input[i] == '&') {
+      if (input.compare(i, 5, "&amp;") == 0) {
+        result += '&';
+        i += 5;
+      } else if (input.compare(i, 6, "&nbsp;") == 0) {
+        result += ' ';
+        i += 6;
+      } else if (input.compare(i, 6, "&quot;") == 0) {
+        result += '"';
+        i += 6;
+      } else if (input.compare(i, 5, "&#39;") == 0) {
+        result += '\'';
+        i += 5;
+      } else if (input.compare(i, 6, "&apos;") == 0) {
+        result += '\'';
+        i += 6;
+      } else if (input.compare(i, 4, "&lt;") == 0) {
+        result += '<';
+        i += 4;
+      } else if (input.compare(i, 4, "&gt;") == 0) {
+        result += '>';
+        i += 4;
+      } else {
+        result += input[i++];
+      }
+    } else {
+      result += input[i++];
+    }
+  }
+  return result;
+}
+
 std::string StripHtml(const std::string &input) {
   std::string result;
   result.reserve(input.size());
@@ -114,11 +150,13 @@ std::string ExtractTargetTable(const std::string &html) {
 
 std::vector<std::string> ExtractTableRows(const std::string &html) {
   std::vector<std::string> rows;
-  size_t pos = 0;
+  if (html.size() < 7)
+    return rows;
 
-  while (true) {
+  size_t pos = 0;
+  while (pos + 4 <= html.size()) {
     size_t trStart = std::string::npos;
-    for (size_t i = pos; i < html.size() - 3; ++i) {
+    for (size_t i = pos; i + 3 < html.size(); ++i) {
       if ((html[i] == '<') &&
           (tolower(static_cast<unsigned char>(html[i + 1])) == 't') &&
           (tolower(static_cast<unsigned char>(html[i + 2])) == 'r') &&
@@ -132,7 +170,7 @@ std::vector<std::string> ExtractTableRows(const std::string &html) {
       break;
 
     size_t trEnd = std::string::npos;
-    for (size_t i = trStart + 3; i < html.size() - 4; ++i) {
+    for (size_t i = trStart + 3; i + 4 < html.size(); ++i) {
       if ((html[i] == '<') && (html[i + 1] == '/') &&
           (tolower(static_cast<unsigned char>(html[i + 2])) == 't') &&
           (tolower(static_cast<unsigned char>(html[i + 3])) == 'r') &&
@@ -154,13 +192,14 @@ std::vector<std::string> ExtractTableRows(const std::string &html) {
 
 std::vector<std::string> ParseTableRow(const std::string &row) {
   std::vector<std::string> cells;
+  if (row.size() < 7)
+    return cells;
+
   size_t pos = 0;
-
-  while (true) {
+  while (pos + 4 <= row.size()) {
     size_t tdStart = std::string::npos;
-    bool isTh = false;
 
-    for (size_t i = pos; i < row.size() - 3; ++i) {
+    for (size_t i = pos; i + 3 < row.size(); ++i) {
       if (row[i] == '<') {
         char t1 = static_cast<char>(tolower(static_cast<unsigned char>(row[i + 1])));
         char t2 = static_cast<char>(tolower(static_cast<unsigned char>(row[i + 2])));
@@ -169,7 +208,6 @@ std::vector<std::string> ParseTableRow(const std::string &row) {
         if (t1 == 't' && (t2 == 'd' || t2 == 'h') &&
             (t3 == ' ' || t3 == '>' || t3 == '\t')) {
           tdStart = i;
-          isTh = (t2 == 'h');
           break;
         }
       }
@@ -184,7 +222,7 @@ std::vector<std::string> ParseTableRow(const std::string &row) {
     contentStart++;
 
     size_t tdEnd = std::string::npos;
-    for (size_t i = contentStart; i < row.size() - 4; ++i) {
+    for (size_t i = contentStart; i + 4 < row.size(); ++i) {
       if (row[i] == '<' && row[i + 1] == '/') {
         char t1 = static_cast<char>(tolower(static_cast<unsigned char>(row[i + 2])));
         char t2 = static_cast<char>(tolower(static_cast<unsigned char>(row[i + 3])));
@@ -199,7 +237,7 @@ std::vector<std::string> ParseTableRow(const std::string &row) {
       break;
 
     std::string cellContent = row.substr(contentStart, tdEnd - contentStart);
-    cellContent = Trim(StripHtml(cellContent));
+    cellContent = Trim(DecodeHtmlEntities(StripHtml(cellContent)));
     cells.push_back(cellContent);
 
     pos = tdEnd + 5;

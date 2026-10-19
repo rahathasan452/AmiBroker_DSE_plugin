@@ -4,6 +4,7 @@
 
 #include "CsvUtils.h"
 #include "DseTypes.h"
+#include "HtmlUtils.h"
 #include <cstdio>
 #include <cstring>
 #include <algorithm>
@@ -92,18 +93,18 @@ bool LoadCsvSeed(const char *symbol, const char *csvSeedPath,
       continue;
 
     // Parse Date (YYYY-MM-DD)
-    bar.year = atoi(std::string(dateStr, 4).c_str());
-    bar.month = atoi(std::string(dateStr + 5, 2).c_str());
-    bar.day = atoi(std::string(dateStr + 8, 2).c_str());
+    bar.year = (int)HtmlUtils::SafeStod(std::string(dateStr, 4));
+    bar.month = (int)HtmlUtils::SafeStod(std::string(dateStr + 5, 2));
+    bar.day = (int)HtmlUtils::SafeStod(std::string(dateStr + 8, 2));
     if (bar.year == 0 || bar.month == 0 || bar.day == 0) {
       continue;
     }
 
-    if (openStr) bar.open = atof(openStr);
-    if (highStr) bar.high = atof(highStr);
-    if (lowStr) bar.low = atof(lowStr);
-    if (closeStr) bar.close = atof(closeStr);
-    if (volStr) bar.volume = atof(volStr);
+    if (openStr) bar.open = HtmlUtils::SafeStod(openStr);
+    if (highStr) bar.high = HtmlUtils::SafeStod(highStr);
+    if (lowStr) bar.low = HtmlUtils::SafeStod(lowStr);
+    if (closeStr) bar.close = HtmlUtils::SafeStod(closeStr);
+    if (volStr) bar.volume = HtmlUtils::SafeStod(volStr);
 
     // Validate bar before adding
     const double MIN_PRICE = 0.01;
@@ -115,6 +116,7 @@ bool LoadCsvSeed(const char *symbol, const char *csvSeedPath,
                   bar.day >= 1 && bar.day <= 31);
 
     if (valid) {
+      bar.valid = true;
       outBars.push_back(bar);
       rowCount++;
     }
@@ -161,6 +163,24 @@ int ExportAllDataToCsv(const std::map<std::string, std::vector<DseBar>> &cache,
     }
   }
   return count;
+}
+
+static bool MatchesAmarstockSymbol(const char *csvSym, const char *targetSym) {
+  if (!csvSym || !targetSym)
+    return false;
+  if (_stricmp(csvSym, targetSym) == 0)
+    return true;
+  // If target has "00" prefix, compare without prefix (e.g., target="00DSEX", csv="DSEX")
+  if (strlen(targetSym) > 2 && targetSym[0] == '0' && targetSym[1] == '0') {
+    if (_stricmp(csvSym, targetSym + 2) == 0)
+      return true;
+  }
+  // If csv has "00" prefix, compare without prefix (e.g., csv="00DSEX", target="DSEX")
+  if (strlen(csvSym) > 2 && csvSym[0] == '0' && csvSym[1] == '0') {
+    if (_stricmp(csvSym + 2, targetSym) == 0)
+      return true;
+  }
+  return false;
 }
 
 bool ParseAmarstockCsv(const std::string &csv, const char *targetSymbol,
@@ -222,42 +242,44 @@ bool ParseAmarstockCsv(const std::string &csv, const char *targetSymbol,
     if (parts.size() < 7)
       continue;
 
-    if (_stricmp(parts[1].c_str(), targetSymbol) != 0)
+    if (!MatchesAmarstockSymbol(parts[1].c_str(), targetSymbol))
       continue;
 
     DseBar bar;
     memset(&bar, 0, sizeof(bar));
-    bar.valid = true;
 
     std::string dateStr = parts[0];
     if (dateStr.size() >= 10 && dateStr[4] == '-') {
-      bar.year = atoi(dateStr.substr(0, 4).c_str());
-      bar.month = atoi(dateStr.substr(5, 2).c_str());
-      bar.day = atoi(dateStr.substr(8, 2).c_str());
+      bar.year = (int)HtmlUtils::SafeStod(dateStr.substr(0, 4));
+      bar.month = (int)HtmlUtils::SafeStod(dateStr.substr(5, 2));
+      bar.day = (int)HtmlUtils::SafeStod(dateStr.substr(8, 2));
     } else if (dateStr.size() == 8) {
-      bar.year = atoi(dateStr.substr(0, 4).c_str());
-      bar.month = atoi(dateStr.substr(4, 2).c_str());
-      bar.day = atoi(dateStr.substr(6, 2).c_str());
+      bar.year = (int)HtmlUtils::SafeStod(dateStr.substr(0, 4));
+      bar.month = (int)HtmlUtils::SafeStod(dateStr.substr(4, 2));
+      bar.day = (int)HtmlUtils::SafeStod(dateStr.substr(6, 2));
     } else {
       continue;
     }
 
-    bar.open = atof(parts[2].c_str());
-    bar.high = atof(parts[3].c_str());
-    bar.low = atof(parts[4].c_str());
-    bar.close = atof(parts[5].c_str());
-    bar.volume = atof(parts[6].c_str());
+    bar.open = HtmlUtils::SafeStod(parts[2]);
+    bar.high = HtmlUtils::SafeStod(parts[3]);
+    bar.low = HtmlUtils::SafeStod(parts[4]);
+    bar.close = HtmlUtils::SafeStod(parts[5]);
+    bar.volume = HtmlUtils::SafeStod(parts[6]);
 
     if (parts.size() >= 9) {
-      bar.value = atof(parts[7].c_str());
-      bar.trade = atof(parts[8].c_str());
+      bar.value = HtmlUtils::SafeStod(parts[7]);
+      bar.trade = HtmlUtils::SafeStod(parts[8]);
     }
 
     // Validate
     const double MIN_PRICE = 0.01;
     bar.valid = (bar.open >= MIN_PRICE && bar.high >= MIN_PRICE &&
                  bar.low >= MIN_PRICE && bar.close >= MIN_PRICE &&
-                 bar.high >= bar.low);
+                 bar.high >= bar.low &&
+                 bar.year >= 1990 && bar.year <= 2100 &&
+                 bar.month >= 1 && bar.month <= 12 &&
+                 bar.day >= 1 && bar.day <= 31);
 
     if (bar.valid) {
       outBars.push_back(bar);

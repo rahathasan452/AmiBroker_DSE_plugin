@@ -3,18 +3,27 @@
 // Implements all exported AmiBroker plugin functions: Init, Release, Configure,
 // GetQuotesEx, GetRecentInfo, Notify, and SetTimeBase. Owns the global
 // DseDataEngine and RealtimeFeed singletons.
-
 #include "Plugin.h"
 #include "DseDataEngine.h"
 #include "RealtimeFeed.h"
 #include <commctrl.h>
 #include <mutex>
+#include <queue>
 #include <set>
 #include <shlobj.h>
 #include <stdio.h>
 #include <string>
 #include <vector>
 #include <windows.h>
+
+#pragma comment(lib, "user32.lib")
+#pragma comment(lib, "kernel32.lib")
+#pragma comment(lib, "gdi32.lib")
+#pragma comment(lib, "wininet.lib")
+#pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "comctl32.lib")
+#pragma comment(lib, "shell32.lib")
+#pragma comment(lib, "ole32.lib")
 
 // Global instances
 PluginInfo g_pluginInfo = {0};
@@ -150,16 +159,14 @@ static void LazyBackfill(const char *symbol) {
                       sizeof(ri->Name) - 1); // Pass the actual symbol
             ri->nStatus = 1;
             ri->nBitmap = 0xFFFF; // Tell AmiBroker to process this update
-            PostMessage(g_hAmiBrokerWnd, WM_USER_STREAMING_UPDATE,
-                        (WPARAM)ri->Name, (LPARAM)ri);
-          } else {
-            g_engine.Log("DEBUG: LazyBackfill (incremental) - Cannot fire "
-                         "update, g_hAmiBrokerWnd is NULL or invalid!");
+            if (!PostMessage(g_hAmiBrokerWnd, WM_USER_STREAMING_UPDATE,
+                             (WPARAM)ri->Name, (LPARAM)ri)) {
+              delete ri;
+            }
           }
         });
 
-    g_engine.Log("LazyBackfill: incremental update for %s, "
-                 "%zu new bars",
+    g_engine.Log("LazyBackfill: incremental update for %s, %zu new bars",
                  symbol, newBars.size());
   } else {
     // No cached data — full backfill
@@ -182,46 +189,123 @@ static void LazyBackfill(const char *symbol) {
                       sizeof(ri->Name) - 1); // Pass the actual symbol
             ri->nStatus = 1;
             ri->nBitmap = 0xFFFF; // Tell AmiBroker to process this update
-            PostMessage(g_hAmiBrokerWnd, WM_USER_STREAMING_UPDATE,
-                        (WPARAM)ri->Name, (LPARAM)ri);
-          } else {
-            g_engine.Log("DEBUG: LazyBackfill (full backfill) - Cannot fire "
-                         "update, g_hAmiBrokerWnd is NULL or invalid!");
+            if (!PostMessage(g_hAmiBrokerWnd, WM_USER_STREAMING_UPDATE,
+                             (WPARAM)ri->Name, (LPARAM)ri)) {
+              delete ri;
+            }
           }
         });
 
-    g_engine.Log("LazyBackfill: full backfill for %s, "
-                 "%zu bars (%d days)",
+    g_engine.Log("LazyBackfill: full backfill for %s, %zu bars (%d days)",
                  symbol, bars.size(), days);
   }
 }
 
-struct BackfillParams {
-  char symbol[64];
-};
+// ---------------------------------------------------------------------------
+// Bounded Background Backfill Worker Queue
+// Prevents thread explosion when AmiBroker opens watchlists or runs scans.
+// ---------------------------------------------------------------------------
 
-static DWORD WINAPI BackfillThreadProc(LPVOID lpParam) {
-  BackfillParams *p = (BackfillParams *)lpParam;
-  char symbol[64];
-  strncpy_s(symbol, p->symbol, sizeof(symbol) - 1);
-  symbol[sizeof(symbol) - 1] = '\0';
-  LazyBackfill(p->symbol);
-  delete p;
+static std::queue<std::string> s_backfillQueue;
+static std::set<std::string> s_backfillsPending;
+static std::mutex s_backfillMutex;
+static HANDLE s_hBackfillEvent = NULL;
+static HANDLE s_hBackfillWorker = NULL;
+static std::atomic<bool> s_stopBackfillWorker(false);
+static std::atomic<bool> s_stopBulkSync(false);
 
-  // Tell AmiBroker to refresh
-  if (g_hAmiBrokerWnd && IsWindow(g_hAmiBrokerWnd)) {
-    g_engine.Log("DEBUG: BackfillThreadProc done, posting final "
-                 "WM_USER_STREAMING_UPDATE");
-    RecentInfo *ri = new RecentInfo;
-    memset(ri, 0, sizeof(RecentInfo));
-    ri->nStructSize = sizeof(RecentInfo);
-    strncpy_s(ri->Name, symbol, sizeof(ri->Name) - 1); // Pass the actual symbol
-    ri->nStatus = 1;
-    ri->nBitmap = 0xFFFF; // Tell AmiBroker to process this update
-    PostMessage(g_hAmiBrokerWnd, WM_USER_STREAMING_UPDATE, (WPARAM)ri->Name,
-                (LPARAM)ri);
+static DWORD WINAPI BackfillWorkerThreadProc(LPVOID) {
+  while (!s_stopBackfillWorker.load()) {
+    std::string symbol;
+    {
+      std::lock_guard<std::mutex> lock(s_backfillMutex);
+      if (!s_backfillQueue.empty()) {
+        symbol = s_backfillQueue.front();
+        s_backfillQueue.pop();
+      }
+    }
+
+    if (symbol.empty()) {
+      // Wait for next work item or shutdown signal
+      WaitForSingleObject(s_hBackfillEvent, 2000);
+      continue;
+    }
+
+    if (s_stopBackfillWorker.load())
+      break;
+
+    g_engine.Log("BackfillWorker: starting backfill for %s", symbol.c_str());
+    LazyBackfill(symbol.c_str());
+
+    // Post update to AmiBroker
+    if (g_hAmiBrokerWnd && IsWindow(g_hAmiBrokerWnd)) {
+      RecentInfo *ri = new RecentInfo;
+      memset(ri, 0, sizeof(RecentInfo));
+      ri->nStructSize = sizeof(RecentInfo);
+      strncpy_s(ri->Name, symbol.c_str(), sizeof(ri->Name) - 1);
+      ri->nStatus = 1;
+      ri->nBitmap = 0xFFFF;
+      if (!PostMessage(g_hAmiBrokerWnd, WM_USER_STREAMING_UPDATE,
+                       (WPARAM)ri->Name, (LPARAM)ri)) {
+        delete ri;
+      }
+    }
+
+    // Mark as finished in pending set
+    {
+      std::lock_guard<std::mutex> lock(s_backfillMutex);
+      s_backfillsPending.erase(symbol);
+    }
+
+    Sleep(50); // gentle throttle
   }
   return 0;
+}
+
+static void StartBackfillWorker() {
+  if (s_hBackfillWorker == NULL) {
+    s_stopBackfillWorker = false;
+    s_hBackfillEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    s_hBackfillWorker = CreateThread(NULL, 0, BackfillWorkerThreadProc, NULL, 0, NULL);
+  }
+}
+
+static void StopBackfillWorker() {
+  s_stopBackfillWorker = true;
+  if (s_hBackfillEvent)
+    SetEvent(s_hBackfillEvent);
+
+  if (s_hBackfillWorker) {
+    WaitForSingleObject(s_hBackfillWorker, 3000);
+    CloseHandle(s_hBackfillWorker);
+    s_hBackfillWorker = NULL;
+  }
+  if (s_hBackfillEvent) {
+    CloseHandle(s_hBackfillEvent);
+    s_hBackfillEvent = NULL;
+  }
+
+  std::lock_guard<std::mutex> lock(s_backfillMutex);
+  while (!s_backfillQueue.empty())
+    s_backfillQueue.pop();
+  s_backfillsPending.clear();
+}
+
+static void EnqueueBackfill(const char *symbol) {
+  if (!symbol || !symbol[0])
+    return;
+
+  StartBackfillWorker();
+
+  std::lock_guard<std::mutex> lock(s_backfillMutex);
+  std::string sym(symbol);
+  if (s_backfillsPending.find(sym) == s_backfillsPending.end()) {
+    s_backfillsPending.insert(sym);
+    s_backfillQueue.push(sym);
+    if (s_hBackfillEvent)
+      SetEvent(s_hBackfillEvent);
+    g_engine.Log("EnqueueBackfill: queued %s (queue size %zu)", symbol, s_backfillQueue.size());
+  }
 }
 
 // Thread for handling bulk synchronization of all symbols
@@ -229,6 +313,8 @@ static DWORD WINAPI BulkSyncThreadProc(LPVOID lpParam) {
   int syncType = (int)(intptr_t)lpParam; // 1 = DSE, 2 = Amarstock
   g_engine.Log("BulkSync: Starting full database synchronization (Type %d)...",
                syncType);
+
+  s_stopBulkSync = false;
 
   // We need a stable copy of the symbol list to iterate over
   std::vector<std::string> syms = g_engine.GetSymbolList();
@@ -241,10 +327,12 @@ static DWORD WINAPI BulkSyncThreadProc(LPVOID lpParam) {
   int successCount = 0;
   int processedTargetCount = 0;
   for (const auto &sym : syms) {
-    bool isAmarstock = (_stricmp(sym.c_str(), "00DS30") == 0 ||
-                        _stricmp(sym.c_str(), "00DSES") == 0 ||
-                        _stricmp(sym.c_str(), "00DSEX") == 0 ||
-                        _stricmp(sym.c_str(), "00DSMEX") == 0);
+    if (s_stopBulkSync.load() || !g_initialized) {
+      g_engine.Log("BulkSync: Synchronization aborted");
+      break;
+    }
+
+    bool isAmarstock = DseDataEngine::IsAmarstockIndex(sym.c_str());
 
     if (syncType == 1 && isAmarstock)
       continue;
@@ -255,9 +343,6 @@ static DWORD WINAPI BulkSyncThreadProc(LPVOID lpParam) {
 
     g_engine.Log("BulkSync: Processing %s...", sym.c_str());
 
-    // LazyBackfill will handle creating individual threads or synchronous
-    // backfill To prevent 400 simultaneous threads, we call FetchHistoricalData
-    // directly in this loop
     int days = g_engine.GetConfig().historyDays;
     std::string startDate = DateDaysAgo(days);
     std::string endDate = DateToday();
@@ -270,21 +355,20 @@ static DWORD WINAPI BulkSyncThreadProc(LPVOID lpParam) {
       successCount++;
     }
 
-    // Optional: Sleep briefly between symbols to avoid hammering DSE/Amarstock
-    // servers too aggressively
     Sleep(100);
   }
 
-  char msg[256];
-  sprintf_s(msg,
-            "Bulk Background Sync Finished!\nSuccessfully processed %d out of "
-            "%d targeted symbols.",
-            successCount, processedTargetCount);
+  if (!s_stopBulkSync.load() && g_initialized) {
+    char msg[256];
+    sprintf_s(msg,
+              "Bulk Background Sync Finished!\nSuccessfully processed %d out of "
+              "%d targeted symbols.",
+              successCount, processedTargetCount);
 
-  // Pop up a message box onto AmiBroker informing the user it's done
-  if (g_hAmiBrokerWnd) {
-    MessageBoxA(g_hAmiBrokerWnd, msg, "DSE Plugin - Auto Sync",
-                MB_OK | MB_ICONINFORMATION);
+    if (g_hAmiBrokerWnd && IsWindow(g_hAmiBrokerWnd)) {
+      MessageBoxA(g_hAmiBrokerWnd, msg, "DSE Plugin - Auto Sync",
+                  MB_OK | MB_ICONINFORMATION);
+    }
   }
 
   g_engine.Log("BulkSync: Finished full database synchronization.");
@@ -296,7 +380,7 @@ PLUGINAPI int GetPluginInfo(struct PluginInfo *pInfo) {
   pInfo->nStructSize = sizeof(PluginInfo);
   pInfo->nType = 2; // PLUGIN_TYPE_DATA
   pInfo->nVersion =
-      10000; // v1.0.0 (coded as MAJOR*10000 + MINOR*100 + RELEASE)
+      10200; // v1.2.0 (coded as MAJOR*10000 + MINOR*100 + RELEASE)
   pInfo->nIDCode = 0xD5E1; // Unique ID
   pInfo->nCertificate = 0;
   pInfo->nMinAmiVersion = 52700; // Requires AmiBroker 5.27+ (coded as 527*100)
@@ -385,8 +469,14 @@ extern "C" __declspec(dllexport) int Init(void) {
 extern "C" __declspec(dllexport) int Release(void) {
   g_engine.Log("Plugin::Release — shutting down");
 
+  // Signal bulk sync to stop if running
+  s_stopBulkSync = true;
+
   // Stop real-time feed first
   g_feed.Stop();
+
+  // Stop background backfill worker queue
+  StopBackfillWorker();
 
   // Shutdown the data engine
   g_engine.Shutdown();
@@ -478,6 +568,19 @@ static INT_PTR CALLBACK ConfigDlgProc(HWND hDlg, UINT msg, WPARAM wParam,
     // Set Export Interval
     sprintf_s(buf, "%d", g_engine.GetConfig().exportIntervalSec);
     SetDlgItemTextA(hDlg, ID_EDIT_EXPORT_INT, buf);
+
+    // Apply standard modern GUI font to dialog and all child controls
+    HFONT hFont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
+    if (hFont) {
+      SendMessage(hDlg, WM_SETFONT, (WPARAM)hFont, TRUE);
+      EnumChildWindows(
+          hDlg,
+          [](HWND hwndChild, LPARAM lParam) -> BOOL {
+            SendMessage(hwndChild, WM_SETFONT, (WPARAM)lParam, TRUE);
+            return TRUE;
+          },
+          (LPARAM)hFont);
+    }
 
     return TRUE;
   }
@@ -607,11 +710,7 @@ static INT_PTR CALLBACK ConfigDlgProc(HWND hDlg, UINT msg, WPARAM wParam,
       int added = 0;
       int targetCount = 0;
       for (const auto &sym : *pSyms) {
-        bool isAmarstock = (_stricmp(sym.c_str(), "00DS30") == 0 ||
-                            _stricmp(sym.c_str(), "00DSES") == 0 ||
-                            _stricmp(sym.c_str(), "00DSEX") == 0 ||
-                            _stricmp(sym.c_str(), "00DSMEX") == 0);
-        if (isAmarstock)
+        if (DseDataEngine::IsAmarstockIndex(sym.c_str()))
           continue; // Only process DSEBD symbols
 
         if (pSite->AddStockNew(sym.c_str())) {
@@ -658,11 +757,7 @@ static INT_PTR CALLBACK ConfigDlgProc(HWND hDlg, UINT msg, WPARAM wParam,
       int added = 0;
       int targetCount = 0;
       for (const auto &sym : *pSyms) {
-        bool isAmarstock = (_stricmp(sym.c_str(), "00DS30") == 0 ||
-                            _stricmp(sym.c_str(), "00DSES") == 0 ||
-                            _stricmp(sym.c_str(), "00DSEX") == 0 ||
-                            _stricmp(sym.c_str(), "00DSMEX") == 0);
-        if (!isAmarstock)
+        if (!DseDataEngine::IsAmarstockIndex(sym.c_str()))
           continue; // Only process Amarstock symbols
 
         if (pSite->AddStockNew(sym.c_str())) {
@@ -726,7 +821,7 @@ PLUGINAPI int Configure(LPCTSTR pszPath, struct InfoSite *pSite) {
   pDlg->x = 0;
   pDlg->y = 0;
   pDlg->cx = 300;
-  pDlg->cy = 266;
+  pDlg->cy = 214;
   p += sizeof(DLGTEMPLATE) / sizeof(WORD);
 
   // Menu (none)
@@ -734,14 +829,10 @@ PLUGINAPI int Configure(LPCTSTR pszPath, struct InfoSite *pSite) {
   // Class (default)
   *p++ = 0;
   // Title
-  const wchar_t *title = L"DSE Data Plugin — Settings";
+  const wchar_t *title = L"DSE Data Plugin - Settings";
   size_t titleLen = wcslen(title) + 1;
   memcpy(p, title, titleLen * sizeof(WORD));
   p += titleLen;
-
-  // Align to DWORD boundary
-  if ((ULONG_PTR)p & 2)
-    p++;
 
   // Align to DWORD boundary
   if ((ULONG_PTR)p & 2)
@@ -764,42 +855,42 @@ PLUGINAPI int Configure(LPCTSTR pszPath, struct InfoSite *pSite) {
           L"EDIT", L"5000");
 
   // Static: "Status:"
-  AddCtrl(p, SS_LEFT, 10, 60, 30, 10, (WORD)-1, L"STATIC", L"Status:");
+  AddCtrl(p, SS_LEFT, 10, 56, 30, 10, (WORD)-1, L"STATIC", L"Status:");
 
   // Static: Connection status (dynamic)
-  AddCtrl(p, SS_LEFT, 50, 60, 160, 10, ID_STATIC_STATUS, L"STATIC",
+  AddCtrl(p, SS_LEFT, 45, 56, 220, 10, ID_STATIC_STATUS, L"STATIC",
           L"Checking...");
 
   // Checkbox: Prefer Web Data
-  AddCtrl(p, BS_AUTOCHECKBOX | WS_TABSTOP, 10, 64, 260, 12, ID_CHK_PREFER_WEB,
+  AddCtrl(p, BS_AUTOCHECKBOX | WS_TABSTOP, 10, 72, 260, 12, ID_CHK_PREFER_WEB,
           L"BUTTON", L"Prefer Web Data (Overwrite Local)");
 
   // Refresh / Sync buttons
-  AddCtrl(p, WS_TABSTOP | BS_PUSHBUTTON, 10, 84, 110, 14, ID_BTN_REFRESH,
+  AddCtrl(p, WS_TABSTOP | BS_PUSHBUTTON, 10, 92, 110, 14, ID_BTN_REFRESH,
           L"BUTTON", L"Refresh Symbols");
-  AddCtrl(p, WS_TABSTOP | BS_PUSHBUTTON, 130, 84, 150, 14, ID_BTN_SYNC,
+  AddCtrl(p, WS_TABSTOP | BS_PUSHBUTTON, 130, 92, 150, 14, ID_BTN_SYNC,
           L"BUTTON", L"Sync DSEbd Database");
-  AddCtrl(p, WS_TABSTOP | BS_PUSHBUTTON, 130, 100, 150, 14, ID_BTN_SYNC_INDICES,
+  AddCtrl(p, WS_TABSTOP | BS_PUSHBUTTON, 130, 110, 150, 14, ID_BTN_SYNC_INDICES,
           L"BUTTON", L"Sync Amarstock Indices");
 
   // Export Path label + edit + Browse button
-  AddCtrl(p, SS_LEFT, 10, 124, 60, 10, (WORD)-1, L"STATIC", L"Export Path:");
-  AddCtrl(p, WS_BORDER | WS_TABSTOP, 10, 136, 240, 12, ID_EDIT_EXPORT_PATH,
+  AddCtrl(p, SS_LEFT, 10, 132, 60, 10, (WORD)-1, L"STATIC", L"Export Path:");
+  AddCtrl(p, WS_BORDER | WS_TABSTOP, 10, 144, 240, 12, ID_EDIT_EXPORT_PATH,
           L"EDIT", L"");
-  AddCtrl(p, WS_TABSTOP | BS_PUSHBUTTON, 255, 135, 35, 14, ID_BTN_BROWSE,
+  AddCtrl(p, WS_TABSTOP | BS_PUSHBUTTON, 255, 143, 35, 14, ID_BTN_BROWSE,
           L"BUTTON", L"...");
 
   // Auto-Save label + edit + Save Now button
-  AddCtrl(p, SS_LEFT, 10, 158, 65, 10, (WORD)-1, L"STATIC", L"Auto-Save (s):");
-  AddCtrl(p, WS_BORDER | WS_TABSTOP | ES_NUMBER, 78, 156, 35, 12,
+  AddCtrl(p, SS_LEFT, 10, 166, 65, 10, (WORD)-1, L"STATIC", L"Auto-Save (s):");
+  AddCtrl(p, WS_BORDER | WS_TABSTOP | ES_NUMBER, 78, 164, 35, 12,
           ID_EDIT_EXPORT_INT, L"EDIT", L"0");
-  AddCtrl(p, WS_TABSTOP | BS_PUSHBUTTON, 120, 155, 100, 14, ID_BTN_SAVE_NOW,
+  AddCtrl(p, WS_TABSTOP | BS_PUSHBUTTON, 120, 163, 100, 14, ID_BTN_SAVE_NOW,
           L"BUTTON", L"Save CSVs Now");
 
   // OK / Cancel
-  AddCtrl(p, WS_TABSTOP | BS_DEFPUSHBUTTON, 150, 236, 60, 14, ID_BTN_OK,
+  AddCtrl(p, WS_TABSTOP | BS_DEFPUSHBUTTON, 150, 190, 60, 14, ID_BTN_OK,
           L"BUTTON", L"OK");
-  AddCtrl(p, WS_TABSTOP | BS_PUSHBUTTON, 220, 236, 60, 14, ID_BTN_CANCEL,
+  AddCtrl(p, WS_TABSTOP | BS_PUSHBUTTON, 220, 190, 60, 14, ID_BTN_CANCEL,
           L"BUTTON", L"Cancel");
 
   // Show the dialog
@@ -822,10 +913,7 @@ PLUGINAPI int GetQuotesEx(const char *pszTicker, int nPeriodicity,
   // Get cached bars
   std::vector<DseBar> bars;
 
-  bool isAmarstock = (_stricmp(pszTicker, "00DS30") == 0 ||
-                      _stricmp(pszTicker, "00DSES") == 0 ||
-                      _stricmp(pszTicker, "00DSEX") == 0 ||
-                      _stricmp(pszTicker, "00DSMEX") == 0);
+  bool isAmarstock = DseDataEngine::IsAmarstockIndex(pszTicker);
 
   if (isAmarstock) {
     g_engine.Log("\n=======================================================");
@@ -846,31 +934,10 @@ PLUGINAPI int GetQuotesEx(const char *pszTicker, int nPeriodicity,
       validCacheCount++;
   }
 
-  // Check if we need to fetch data (empty OR only contains the dummy/invalid
-  // bar)
+  // Check if we need to fetch data (empty OR only contains the dummy/invalid bar)
   if (validCacheCount == 0) {
     g_engine.Log("DEBUG: GetQuotesEx - No cached data for %s!", pszTicker);
-    // No cached data — trigger backfill in background.
-    // Use a set so every unique symbol gets exactly one backfill thread,
-    // not just the first symbol ever seen (the old static-char bug).
-    static std::set<std::string> s_enqueuedBackfills;
-    static std::mutex s_backfillMutex;
-    {
-      std::lock_guard<std::mutex> lock(s_backfillMutex);
-      std::string sym(pszTicker);
-      if (s_enqueuedBackfills.find(sym) == s_enqueuedBackfills.end()) {
-        s_enqueuedBackfills.insert(sym);
-        g_engine.Log("GetQuotesEx: triggering background backfill for %s",
-                     pszTicker);
-        BackfillParams *p = new BackfillParams;
-        strncpy_s(p->symbol, pszTicker, sizeof(p->symbol) - 1);
-        g_engine.Log("DEBUG: GetQuotesEx: Creating thread for %s", pszTicker);
-        CreateThread(NULL, 0, BackfillThreadProc, p, 0, NULL);
-      } else {
-        g_engine.Log("DEBUG: GetQuotesEx - Backfill already enqueued for %s",
-                     pszTicker);
-      }
-    }
+    EnqueueBackfill(pszTicker);
     return (nLastValid < 0) ? 0 : nLastValid + 1;
   }
 
@@ -980,8 +1047,8 @@ PLUGINAPI int GetQuotesEx(const char *pszTicker, int nPeriodicity,
         pQuotes[lastIdx].DateTime = PackAmiDate(
             st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
       }
-    } else if (g_engine.IsMarketOpen()) {
-      // It's a new day — add a new bar
+    } else if (liveQuote.valid && liveQuote.ltp > 0) {
+      // It's today's new bar (whether during market hours or in the evening before day-end archive is downloaded)
       if (count < nSize) {
         int newIdx = count;
         pQuotes[newIdx].DateTime = PackAmiDate(
@@ -1033,13 +1100,7 @@ struct QuotationFormat4 {
 
 PLUGINAPI int GetQuotes(LPCTSTR pszTicker, int nPeriodicity, int nLastValid,
                         int nSize, struct QuotationFormat4 *pQuotes) {
-  bool isAmarstock = false;
-  if (pszTicker && pszTicker[0]) {
-    isAmarstock = (_stricmp(pszTicker, "00DS30") == 0 ||
-                   _stricmp(pszTicker, "00DSES") == 0 ||
-                   _stricmp(pszTicker, "00DSEX") == 0 ||
-                   _stricmp(pszTicker, "00DSMEX") == 0);
-  }
+  bool isAmarstock = DseDataEngine::IsAmarstockIndex(pszTicker);
 
   if (isAmarstock) {
     g_engine.Log("\n=======================================================");
@@ -1149,13 +1210,7 @@ PLUGINAPI int Notify(struct PluginNotification *pNotification) {
 }
 
 PLUGINAPI struct RecentInfo *GetRecentInfo(const char *pszTicker) {
-  bool isAmarstock = false;
-  if (pszTicker && pszTicker[0]) {
-    isAmarstock = (_stricmp(pszTicker, "00DS30") == 0 ||
-                   _stricmp(pszTicker, "00DSES") == 0 ||
-                   _stricmp(pszTicker, "00DSEX") == 0 ||
-                   _stricmp(pszTicker, "00DSMEX") == 0);
-  }
+  bool isAmarstock = DseDataEngine::IsAmarstockIndex(pszTicker);
 
   if (isAmarstock) {
     g_engine.Log("AMARSTOCK TRACE: GetRecentInfo called for '%s'", pszTicker);
@@ -1164,7 +1219,7 @@ PLUGINAPI struct RecentInfo *GetRecentInfo(const char *pszTicker) {
                  pszTicker ? pszTicker : "NULL");
   }
 
-  static RecentInfo ri;
+  thread_local static RecentInfo ri;
   memset(&ri, 0, sizeof(ri));
 
   if (!pszTicker || !pszTicker[0])

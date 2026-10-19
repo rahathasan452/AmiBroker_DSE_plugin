@@ -1,12 +1,7 @@
-// RealtimeFeed.cpp — Background Polling Thread
-//
-// Runs a background thread that polls FetchLatestQuotes() at the configured
-// interval during market hours and pushes each update to AmiBroker via
-// PostMessage(WM_USER_STREAMING_UPDATE).
-
 #include "RealtimeFeed.h"
 #include "Plugin.h"
 #include <cstring>
+#include <unordered_set>
 #include <windows.h>
 
 // ---------------------------------------------------------------------------
@@ -14,11 +9,20 @@
 // ---------------------------------------------------------------------------
 
 RealtimeFeed::RealtimeFeed()
-    : m_hMainWnd(NULL), m_engine(nullptr), m_hThread(NULL), m_running(false),
-      m_stopRequested(false), m_pollIntervalMs(5000), m_reconnectAttempts(0),
-      m_maxReconnectAttempts(10) {}
+    : m_hMainWnd(NULL), m_engine(nullptr), m_hThread(NULL),
+      m_hStopEvent(NULL), m_running(false), m_stopRequested(false),
+      m_pollIntervalMs(5000), m_reconnectAttempts(0),
+      m_maxReconnectAttempts(10) {
+  m_hStopEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+}
 
-RealtimeFeed::~RealtimeFeed() { Stop(); }
+RealtimeFeed::~RealtimeFeed() {
+  Stop();
+  if (m_hStopEvent) {
+    CloseHandle(m_hStopEvent);
+    m_hStopEvent = NULL;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Start / Stop
@@ -31,6 +35,8 @@ bool RealtimeFeed::Start(HWND hMainWnd, DseDataEngine *engine) {
   m_hMainWnd = hMainWnd;
   m_engine = engine;
   m_stopRequested = false;
+  if (m_hStopEvent)
+    ResetEvent(m_hStopEvent);
   m_reconnectAttempts = 0;
 
   if (engine) {
@@ -40,12 +46,14 @@ bool RealtimeFeed::Start(HWND hMainWnd, DseDataEngine *engine) {
 
   m_hThread = CreateThread(NULL, 0, ThreadProc, this, 0, NULL);
   if (!m_hThread) {
-    m_engine->Log("ERROR: RealtimeFeed::Start — CreateThread failed");
+    if (m_engine)
+      m_engine->Log("ERROR: RealtimeFeed::Start — CreateThread failed");
     return false;
   }
 
   m_running = true;
-  m_engine->Log("RealtimeFeed::Start — polling thread started");
+  if (m_engine)
+    m_engine->Log("RealtimeFeed::Start — polling thread started");
   return true;
 }
 
@@ -54,11 +62,14 @@ void RealtimeFeed::Stop() {
     return;
 
   m_stopRequested = true;
+  if (m_hStopEvent)
+    SetEvent(m_hStopEvent);
 
   if (m_hThread) {
-    DWORD result = WaitForSingleObject(m_hThread, 10000);
-    if (result == WAIT_TIMEOUT)
-      TerminateThread(m_hThread, 0);
+    DWORD result = WaitForSingleObject(m_hThread, 5000);
+    if (result == WAIT_TIMEOUT && m_engine) {
+      m_engine->Log("WARNING: RealtimeFeed::Stop — thread wait timed out");
+    }
     CloseHandle(m_hThread);
     m_hThread = NULL;
   }
@@ -82,63 +93,85 @@ DWORD WINAPI RealtimeFeed::ThreadProc(LPVOID lpParam) {
 // ---------------------------------------------------------------------------
 
 void RealtimeFeed::PollLoop() {
-  m_engine->Log("PollLoop: entering");
+  if (m_engine)
+    m_engine->Log("PollLoop: entering");
 
   while (!m_stopRequested.load()) {
 
-    if (m_engine->IsMarketOpen()) {
+    if (m_engine && m_engine->IsMarketOpen()) {
       std::vector<DseQuote> quotes;
       bool ok = m_engine->FetchLatestQuotes(quotes);
 
       if (ok) {
         m_reconnectAttempts = 0;
 
-        // Update quote cache
+        // Take snapshot of subscriptions
+        std::vector<std::string> subs;
+        {
+          std::lock_guard<std::mutex> subLock(m_subsMutex);
+          subs = m_subscriptions;
+        }
+
+        std::unordered_set<std::string> sentSymbols;
+
+        // Update quote cache under lock and send quotes
         {
           std::lock_guard<std::mutex> lock(m_quotesMutex);
           for (const auto &q : quotes)
             m_latestQuotes[q.symbol] = q;
-        }
 
-        // Push subscribed symbols first (priority), then all others
-        {
-          std::lock_guard<std::mutex> subLock(m_subsMutex);
-          for (const auto &sym : m_subscriptions) {
+          // Push subscribed symbols first (priority)
+          for (const auto &sym : subs) {
             auto it = m_latestQuotes.find(sym);
-            if (it != m_latestQuotes.end())
+            if (it != m_latestQuotes.end()) {
               SendStreamingUpdate(it->second);
+              sentSymbols.insert(sym);
+            }
+          }
+
+          // Push remaining symbols without duplicate sending
+          for (const auto &q : quotes) {
+            if (sentSymbols.find(q.symbol) == sentSymbols.end()) {
+              SendStreamingUpdate(q);
+              sentSymbols.insert(q.symbol);
+            }
           }
         }
-        for (const auto &q : quotes)
-          SendStreamingUpdate(q);
 
-        m_engine->Log("PollLoop: pushed %zu quotes", quotes.size());
+        if (m_engine)
+          m_engine->Log("PollLoop: pushed %zu unique quotes", sentSymbols.size());
 
       } else {
-        m_engine->Log("PollLoop: fetch failed, attempting reconnect");
+        if (m_engine)
+          m_engine->Log("PollLoop: fetch failed, attempting reconnect");
         if (!TryReconnect()) {
-          m_engine->Log("PollLoop: max reconnects reached, sleeping 60s");
-          for (int i = 0; i < 60 && !m_stopRequested.load(); ++i)
-            Sleep(1000);
+          if (m_engine)
+            m_engine->Log("PollLoop: max reconnects reached, sleeping 60s");
+          WaitForSingleObject(m_hStopEvent, 60000);
           m_reconnectAttempts = 0;
           continue;
         }
       }
 
-      // Sleep for poll interval in 100 ms chunks (responsive to stop signal)
-      int chunks = m_pollIntervalMs / 100;
-      for (int i = 0; i < chunks && !m_stopRequested.load(); ++i)
-        Sleep(100);
+      // Check auto-export if interval is configured
+      if (m_engine)
+        m_engine->CheckAutoExport();
+
+      // Event-driven sleep for poll interval (instantly wakeable on stop)
+      WaitForSingleObject(m_hStopEvent, m_pollIntervalMs);
 
     } else {
-      // Market is closed — check again in 60 s
-      m_engine->Log("PollLoop: market closed, sleeping 60s");
-      for (int i = 0; i < 60 && !m_stopRequested.load(); ++i)
-        Sleep(1000);
+      // Market is closed — check auto export and wait up to 60s
+      if (m_engine) {
+        m_engine->CheckAutoExport();
+        m_engine->Log("PollLoop: market closed, sleeping 60s");
+      }
+      WaitForSingleObject(m_hStopEvent, 60000);
     }
   }
 
-  m_engine->Log("PollLoop: exiting");
+  if (m_engine)
+    m_engine->Log("PollLoop: exiting");
 }
 
 // ---------------------------------------------------------------------------
@@ -147,7 +180,8 @@ void RealtimeFeed::PollLoop() {
 
 // Packages a DseQuote into a RecentInfo and posts it to the AmiBroker window.
 // AmiBroker reads the struct asynchronously, so it is heap-allocated here and
-// AmiBroker is responsible for freeing it.
+// AmiBroker is responsible for freeing it upon receipt.
+// If PostMessage fails, it is deleted immediately to prevent leaks.
 void RealtimeFeed::SendStreamingUpdate(const DseQuote &quote) {
   if (!m_hMainWnd || !IsWindow(m_hMainWnd))
     return;
@@ -172,10 +206,12 @@ void RealtimeFeed::SendStreamingUpdate(const DseQuote &quote) {
   GetLocalTime(&st);
   ri->nDateUpdate = (st.wYear * 10000) + (st.wMonth * 100) + st.wDay;
   ri->nTimeUpdate = (st.wHour * 10000) + (st.wMinute * 100) + st.wSecond;
-  ri->nStatus = (m_engine->GetConnectionState() == CONN_CONNECTED) ? 1 : 2;
+  ri->nStatus = (m_engine && m_engine->GetConnectionState() == CONN_CONNECTED) ? 1 : 2;
 
-  PostMessage(m_hMainWnd, WM_USER_STREAMING_UPDATE, (WPARAM)ri->Name,
-              (LPARAM)ri);
+  if (!PostMessage(m_hMainWnd, WM_USER_STREAMING_UPDATE, (WPARAM)ri->Name,
+                   (LPARAM)ri)) {
+    delete ri; // Prevent memory leak if message could not be posted
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -184,7 +220,7 @@ void RealtimeFeed::SendStreamingUpdate(const DseQuote &quote) {
 
 // Exponential backoff: 5 s, 10 s, 20 s, ... capped at 60 s.
 bool RealtimeFeed::TryReconnect() {
-  if (m_reconnectAttempts >= m_maxReconnectAttempts)
+  if (!m_engine || m_reconnectAttempts >= m_maxReconnectAttempts)
     return false;
 
   ++m_reconnectAttempts;
@@ -195,9 +231,9 @@ bool RealtimeFeed::TryReconnect() {
   m_engine->Log("TryReconnect: attempt %d/%d, waiting %d ms",
                 m_reconnectAttempts, m_maxReconnectAttempts, backoffMs);
 
-  int chunks = backoffMs / 100;
-  for (int i = 0; i < chunks && !m_stopRequested.load(); ++i)
-    Sleep(100);
+  DWORD waitRes = WaitForSingleObject(m_hStopEvent, backoffMs);
+  if (waitRes == WAIT_OBJECT_0 || m_stopRequested.load())
+    return false;
 
   std::vector<DseQuote> test;
   return m_engine->FetchLatestQuotes(test);
@@ -216,7 +252,8 @@ bool RealtimeFeed::GetLatestQuote(const char *symbol, DseQuote &outQuote) {
   return true;
 }
 
-const std::map<std::string, DseQuote> &RealtimeFeed::GetAllQuotes() {
+std::map<std::string, DseQuote> RealtimeFeed::GetAllQuotes() {
+  std::lock_guard<std::mutex> lock(m_quotesMutex);
   return m_latestQuotes;
 }
 

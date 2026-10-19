@@ -45,8 +45,8 @@ public:
   // Get the latest quote for a specific symbol
   bool GetLatestQuote(const char *symbol, DseQuote &outQuote);
 
-  // Get all latest quotes
-  const std::map<std::string, DseQuote> &GetAllQuotes();
+  // Get all latest quotes (thread-safe copy)
+  std::map<std::string, DseQuote> GetAllQuotes();
 
   // Get connection state
   ConnectionState GetConnectionState() const;
@@ -78,6 +78,7 @@ private:
   HWND m_hMainWnd;                   // AmiBroker window
   DseDataEngine *m_engine;           // Shared data engine
   HANDLE m_hThread;                  // Worker thread handle
+  HANDLE m_hStopEvent;               // Event to signal thread shutdown
   std::atomic<bool> m_running;       // Thread running flag
   std::atomic<bool> m_stopRequested; // Stop signal
 
